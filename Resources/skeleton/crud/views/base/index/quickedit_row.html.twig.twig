@@ -1,0 +1,36 @@
+{%- if controller_config.list.quickedit|default(false) %}
+    {%- set isSaveButtonRequired = false %}
+    {%- for column in controller_config.list.quickedit.display %}
+        {%- if not controller_config.list.quickedit.fields[column|trim('_')].plain|default(false) %}
+            {%- set isSaveButtonRequired = true %}
+        {%- endif %}
+    {%- endfor %}
+
+    {{ "{%- if objectActionCredentials['quickedit']|default(false) %}" }}
+
+    <tr id="rowQuickEdit_{{ "{{ " ~ entity_underscored ~ ".getId }}" }}" class="quickEditRow">
+        <td class="table-padding-left"><span>&nbsp;</span></td>
+        <td colspan="{{ "{{ " ~ (controller_config.list.batch_actions|default(false)|length ? "(batchActionCredentials|length ? 1 : 0) + " : "") ~ "dataCredentials|length + objectActionCredentials|length }}" }}" class="first clearfix">
+            {{ "{% set quickedit_form = quickedit_forms[" ~ entity_underscored ~ ".getId] %}" }}
+            {{ "{{ form_start(quickedit_form, {attr: {class: 'form-horizontal ajaxForm edit'}}) }}" }}
+            {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/quickedit/form.html.twig' %}" }}
+
+    {%- if isSaveButtonRequired %}
+
+            <div class="form-actions pt-0 mt-0 mx-0">
+                <button type="submit" class="btn btn-success btn-with-icon" title="{{ "{% trans %}" }}Uložit{{ "{% endtrans %}" }}">
+                    <span class="btn-with-icon-icon"><svg class="icon icon-tick"><use xlink:href="#icon-tick"></use></svg></span>
+                    <strong class="btn-with-icon-text">{{ "{% trans %}" }}Uložit{{ "{% endtrans %}" }}</strong>
+                </button>
+            </div>
+
+    {%- endif %}
+
+            {{ "{{ form_end(quickedit_form, {render_rest: false}) }}" }}
+        </td>
+        <td class="table-padding-right"><span>&nbsp;</span></td>
+    </tr>
+
+    {{ "{%- endif %}" }}
+
+{%- endif %}

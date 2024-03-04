@@ -1,0 +1,63 @@
+{%- if column[:1] == '_' %}
+
+  {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/include/" ~ columnId ~ ".html.twig' with { type: 'list' } %}" }}
+
+{%- elseif columnCfg.target_class is defined %}
+
+  {{ "{%- for i, o in " ~ entity_underscored ~ ".get" ~ pluralizer.getPluralForm(columnCfg.target_class) ~ " %}" }}
+{{ "{% if i %}" }}, {{ "{% endif %}" }}{% if columnCfg.edit_route is defined %}<a href="{{ "{{ path('" ~ columnCfg.edit_route ~ "', { id: o.getId, culture: app.session.get('culture') }) }}" }}"><strong>{% endif %}{{ "{{ o" ~ (columnCfg.text_method is defined ? "." ~ columnCfg.text_method : "") ~ " }}" }}{% if columnCfg.edit_route is defined %}</strong></a>{% endif %}
+  {{ "{%- endfor %}" }}
+
+{%- elseif columnMap and columnMap.isForeignKey %}
+
+{{ "{% if " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ " %}" }}
+
+  {%- if config['controllers'][columnMap.getRelatedTable.getPhpName] is defined %}
+
+  {{ "{% if app.user.hasCredential(" ~ ['FontaiGenerator\\' ~ columnMap.getRelatedTable.getPhpName ~ '-index']|json_encode ~ ") %}" }}
+    <a href="{{ "{{ path('fontai_generator_" ~ columnMap.getRelatedTable.getName ~ "_edit', { id: " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ ", culture: app.session.get('culture') }) }}" }}"><strong>
+      {{ "{{ " ~ entity_underscored ~ ".get" ~ columnMap.getRelation.getName ~ (columnCfg.text_method is defined ? "." ~ columnCfg.text_method : "") ~ " }}" }}
+    </strong></a>
+  {{ "{% else %}" }}
+    {{ "{{ " ~ entity_underscored ~ ".get" ~ columnMap.getRelation.getName ~ (columnCfg.text_method is defined ? "." ~ columnCfg.text_method : "") ~ " }}" }}
+  {{ "{% endif %}" }}
+
+  {%- else %}
+
+  {{ "{{ " ~ entity_underscored ~ ".get" ~ columnMap.getRelation.getName ~ (columnCfg.text_method is defined ? "." ~ columnCfg.text_method : "") ~ " }}" }}
+
+  {%- endif %}
+
+{{ "{% endif %}" }}
+
+{%- elseif columnMap and columnMap.isTemporal %}
+  {%- set format = { 'DATE': 'j. n. Y', 'TIME': 'H:i:s', 'TIMESTAMP': 'j. n. Y H:i' } %}
+
+{{ "{% if " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ " is not empty %}" }}
+  {{ "{{ " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ "|date('" ~ columnCfg.date_format|default(format[columnMap.getType]) ~ "') }}" }}
+{{ "{% endif %}" }}
+
+{%- elseif columnMap and columnCfg.type|default(false) == 'File' and columnCfg.download_route|default(false) %}
+
+{{ "{%- set file = " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ "File %}" }}
+{{ "{%- if file %}" }}
+
+<a href="{{ "{{ path('" ~ columnCfg.download_route ~ "', { id: " ~ entity_underscored ~ ".getId }) }}" }}">{{ "{% trans %}" }}Stáhnout{{ "{% endtrans %}" }} ({{ "{{ file.getMimeType }}" }}, {{ "{{ file.getSize|format_bytes }}" }})</a>
+
+{{ "{%- endif %}" }}
+
+{%- elseif columnMap and columnMap.getType == 'BOOLEAN' and columnCfg.choices is not defined %}
+
+{{ "{% if " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ " %}" }}<svg class="icon small gray icon-tick"><use xlink:href="#icon-tick"></use></svg>{{ "{% else %}" }}&nbsp;{{ "{% endif %}" }}
+
+{%- else %}
+
+  {%- if columnCfg.choices is defined %}
+{{ "{%- set options = " ~ columnCfg.choices|json_encode(constant('JSON_PRETTY_PRINT') + constant('JSON_UNESCAPED_UNICODE'))|raw ~ " %}" }}
+{{ "{{ options[" ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ "] }}" }}
+  {%- else %}
+{{ "{%- set value = " ~ entity_underscored ~ ".get" ~ (columnMap ? columnMap.getPhpName : columnId|title|replace({'_': ''})) ~ " %}" }}
+{{ "{{ value is iterable ? value|join(', ') : value }}" }}
+  {%- endif %}
+
+{%- endif %}

@@ -1,0 +1,56 @@
+.fontaiControlWidget {
+  .form-group {
+    margin-bottom: 5px;
+
+    textarea {
+      display: block;
+    }
+  }
+
+  a.copyUrl {
+    display: block;
+    margin: 2px 0 5px 0;
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover, &:active {
+      text-decoration: none;
+      color: $themecolor;
+
+      svg {
+        fill: $themecolor;
+      }
+    }
+  }
+
+  .dropzone {
+    margin: 8px 0;
+
+    &:hover {
+      border-style: solid;
+      border-color: $fontai-green;
+
+      .icon-upload {
+        fill: $fontai-green;
+      }
+    }
+  }
+}
+
+.tasksWrap {
+  table {
+    td {
+      padding: 7px 0;
+    }
+
+    tr.collapse {
+      td {
+        background: #f3f1f1;
+      }
+    }
+  }
+}

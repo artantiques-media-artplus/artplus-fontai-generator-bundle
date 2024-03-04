@@ -1,0 +1,55 @@
+{%- if controller_config.list.quickedit|default(false) %}
+
+{{ "{%- if objectActionCredentials['quickedit']|default(false) %}" }}
+
+    <td class="c action">
+        <a href="#" title="{{ "{% trans %}" }}Rychlá úprava{{ "{% endtrans %}" }}" data-id="{{ "{{ " ~ entity_underscored ~ ".getId }}" }}" class="action_quickedit">
+            <svg class="icon icon-quick-edit">
+                <use xlink:href="#icon-quick-edit"></use>
+            </svg>
+        </a>
+    </td>
+
+{{ "{%- endif %}" }}
+
+{%- endif %}
+
+{%- if controller_config.list.object_actions|default(false)|length %}
+    {%- for id, params in controller_config.list.object_actions %}
+        {%- if params is not iterable %}
+            {%- set params = {} %}
+        {%- endif %}
+
+{{ "{%- if objectActionCredentials['" ~ id ~ "']|default(false) %}" }}
+
+        {%- if params.condition is defined %}
+
+    {{ "{%- if " ~ params.condition ~ " %}" }}
+
+        {%- endif %}
+
+        <td class="c action">
+            <a {% if id == 'delete' %}data-method="delete"
+               data-url{% else %}href{% endif %}="{{ "{{ path('" ~ route_name_prefix ~ "_" ~ id ~ "', { id: " ~ entity_underscored ~ ".getId, culture: app.session.get('culture') }|merge(query_string)) }}" }}"
+               title="{{ "{% trans %}" }}{{ params.name|default(id|capitalize) }}{{ "{% endtrans %}" }}"
+               class="action_{{ id }}{% if id == 'delete' or params.confirm is defined %} confirm{% endif %}"{% if id == 'delete' or params.confirm is defined %} data-confirm="{{ "{% trans %}" }}{{ params.confirm|default('Jste si jist?') }}{{ "{% endtrans %}" }}"{% endif %}>
+                <svg class="icon icon-{{ id }}">
+                    <use xlink:href="#icon-{{ id }}"></use>
+                </svg>
+            </a>
+        </td>
+
+        {%- if params.condition is defined %}
+
+    {{ "{%- else %}" }}
+
+        <td class="c action">&nbsp;</td>
+
+    {{ "{%- endif %}" }}
+
+        {%- endif %}
+
+{{ "{%- endif %}" }}
+
+    {%- endfor %}
+{%- endif %}

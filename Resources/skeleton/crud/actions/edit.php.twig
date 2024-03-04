@@ -1,0 +1,36 @@
+
+  /**
+{% block phpdoc_method_header %}
+   * Displays a form to edit an existing {{ entity_class }} entity.
+{% endblock phpdoc_method_header %}
+   *
+{% block phpdoc_method_annotations %}
+{% endblock phpdoc_method_annotations %}
+   */
+{% block method_definition %}
+  public function editAction(Request $request, $id)
+{% endblock method_definition %}
+  {
+{% block method_body %}
+    $query = call_user_func([$this->query, 'create']);
+
+    if ($this->phpNameI18n)
+    {
+      $query->joinWithI18n();
+    }
+
+    if (method_exists($this, 'addCustomCriteria'))
+    {
+      $this->addCustomCriteria($query);
+    }
+    
+    if (!(${{ entity_singularized }} = $query->findOneById($id)))
+    {
+      throw $this->createNotFoundException('{{ entity_class }} object not found');
+    }
+
+{% endblock method_body %}
+{% block method_return %}
+    return $this->handleEdit($request, ${{ entity_singularized }});
+{% endblock method_return %}
+  }

@@ -1,0 +1,49 @@
+{%- if controller_config.list.filters|default(false)|length %}
+
+{{" {%- if filter_form %}" }}
+{{" {%- form_theme filter_form '@FontaiGenerator/form/filter_fields.html.twig' %}" }}
+{{" {%- endif %}" }}
+
+<div class="card-body">
+    {{ "{{ form_start(filter_form, { attr: { action: path('" ~ route_name_prefix ~ "_index') } }) }}" }}
+        <div id="{{ "{{ filter_form.vars.id }}" }}" class="form-row">
+            <input type="hidden" name="culture" value="{{ "{{ app.session.get('culture') }}" }}">
+
+{{"{% block fields %}"}}
+    
+    {%- for column in controller_config.list.filters %}
+        {%- set columnId = column|trim('_') %}
+            {%- set columnCfg = controller_config.list.fields[columnId] %}
+
+        {%- set dataDynamic = [] %}
+        {%- if columnCfg.filter_dynamic|default(false) %}
+            {%- for name in columnCfg.filter_dynamic %}
+                {%- set dataDynamic = dataDynamic|merge(["(filter_form.offsetExists('" ~ name ~ "') ? '#' ~ filter_form." ~ name ~ ".vars.id : null)"]) %}
+            {%- endfor %}
+        {%- endif %}
+
+            {{ "{%- if filter_form.offsetExists('" ~ columnId ~ "') %}{{ form_row(filter_form." ~ columnId ~ (dataDynamic|length ? ", { attr: { 'data-dynamic': [" ~ dataDynamic|join(', ') ~ "]|filter(v => v is not null)|join(',') } }" : "") ~ ") }}{%- endif %}" }}
+
+    {%- endfor %}
+
+{{"{% endblock fields %}"}}
+
+        </div>
+        <div class="form-actions">
+            <div>
+                <button type="submit" class="btn btn-success btn-with-icon mb-2 mr-sm-2">
+                    <span class="btn-with-icon-icon"><svg class="icon icon-filter"><use xlink:href="#icon-filter"></use></svg></span>
+                    <strong class="btn-with-icon-text">{{ "{% trans %}Filtr{% endtrans %}" }}</strong>
+                </button>
+            </div>
+            <div>
+                <button type="button" onclick="window.location = '{{ "{{ path('" ~ route_name_prefix ~ "_index', { resetFilters: true, culture: app.session.get('culture') }) }}" }}'" class="btn btn-light btn-with-icon mb-2 mr-sm-2">
+                    <span class="btn-with-icon-icon"><svg class="icon icon-delete"><use xlink:href="#icon-delete"></use></svg></span>
+                    <strong class="btn-with-icon-text">{{ "{% trans %}Reset{% endtrans %}" }}</strong>
+                </button>
+            </div>
+        </div>
+    {{ "{{ form_end(filter_form) }}" }}
+</div>
+
+{%- endif %}

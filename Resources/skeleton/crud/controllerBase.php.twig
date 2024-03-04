@@ -1,0 +1,141 @@
+<?php
+namespace App\Controller\FontaiGenerator\Base;
+
+{% block use_statements %}
+use Fontai\Bundle\GeneratorBundle\Common\Utils;
+use Fontai\Bundle\GeneratorBundle\Controller\Controller;
+use Propel\Runtime\ActiveQuery\ModelCriteria;
+use Propel\Runtime\ActiveQuery\Criteria;
+use Symfony\Component\HttpFoundation\Request;
+{% endblock use_statements %}
+
+
+/**
+{% block phpdoc_class_header %}
+ * {{ entity_class }} base controller.
+{% endblock phpdoc_class_header %}
+ *
+{% block phpdoc_class_annotations %}
+{% endblock phpdoc_class_annotations %}
+ */
+{% block class_definition %}
+class {{ entity_class }}Controller extends Controller
+{% endblock class_definition %}
+{
+  const SINGULAR_NAME        = '{{ entity_underscored }}';
+  const CONTROLLER_NAMESPACE = 'App\Controller\FontaiGenerator';
+  const MODEL_NAMESPACE      = '{{ entity_namespace }}';
+  const ENTITY_CLASS         = '{{ entity_class }}';
+  const ENTITY               = '{{ entity }}';
+  const QUERY                = '{{ entity }}Query';
+
+{%- if controller_config.list.quickedit|default(false) %}
+
+  const QUICKEDIT_FORM_TYPE  = 'App\Form\FontaiGenerator\Quickedit\{{ entity_class }}Type';
+
+{%- endif %}
+
+  const FILTER_FORM_TYPE     = 'App\Form\FontaiGenerator\Filter\{{ entity_class }}Type';
+  const EDIT_FORM_TYPE       = 'App\Form\FontaiGenerator\Edit\{{ entity_class }}Type';
+  const DEFAULT_PER_PAGE     = {{ config.list.per_page.default }};
+  const SHOW_ALL             = {{ (controller_config.list.show_all ?? false) ? 'TRUE' : 'FALSE' }};
+  const ROUTE_NAME_PREFIX    = '{{ route_name_prefix }}';
+  const FULLTEXT_SEARCH      = {{ (controller_config.fulltextSearch ?? config.fulltextSearch) ? 'TRUE' : 'FALSE' }};
+  const LOG                  = {{ (controller_config.log ?? config.log) ? 'TRUE' : 'FALSE' }};
+
+{%- if controller_config.list.sort is defined %}
+  {%- if controller_config.list.sort is iterable %}
+
+  const DEFAULT_SORT_FIELD   = '{{ controller_config.list.sort[0] }}';
+  const DEFAULT_SORT_TYPE    = '{{ controller_config.list.sort[1] }}';
+
+  {%- else %}
+
+  const DEFAULT_SORT_FIELD   = '{{ controller_config.list.sort }}');
+
+  {%- endif %}
+{%- endif %}
+
+{%- if 'edit' in actions %}
+  
+  const ENABLE_NAVIGATION    = {{ (controller_config.edit.nav ?? config.edit.nav) ? 'TRUE' : 'FALSE' }};
+
+{%- endif %}
+
+{%- if controller_config.export|default(false) %}
+
+  const EXPORT_SHEET_TITLE   = '{{ controller_config.export.title|default('') }}';
+
+{%- endif %}
+
+  protected static $listTitle            = '{{ controller_config.list.title }}';
+  protected static $editTitle            = {{ controller_config.edit.title|split('/')|json_encode(constant('JSON_UNESCAPED_UNICODE')) }};
+  protected static $fields               = {{ table_map.getFieldNames|json_encode }};
+  protected static $includedIn           = [{% for entity in controller_config.included_in|default([]) %}'{{ entity }}', {% endfor %}];
+
+{%- if table_map_i18n %}
+
+  const ENTITY_CLASS_I18N    = '{{ table_map_i18n.getPhpName }}';
+  protected static $fieldsI18n           = {{ table_map_i18n.getFieldNames|json_encode }};
+
+{%- endif %}
+
+  protected static $autocompleteParams = [
+  
+{%- for type, source in {filter: 'list', edit: 'edit'} %}
+    
+    '{{ type }}' => [
+
+  {%- for columnId, columnCfg in controller_config[source].fields if columnCfg.autocomplete|default(false) %}
+    {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : null %}
+      {%- if columnCfg.target_class is defined %}
+        {%- set relatedTable = table_map.getDatabaseMap.getTableByPhpName(entity_namespace ~ '\\' ~ columnCfg.target_class) %}
+      {%- elseif columnMap and columnMap.isForeignKey %}
+        {%- set relatedTable = columnMap.getRelation.getForeignTable %}
+      {%- else %}
+        {% set relatedTable = null %}
+      {%- endif %}
+
+      {%- set field = columnCfg.text_method is defined ? columnCfg.text_method[3:] : (relatedTable ? relatedTable.getPrimaryStringColumn.getPhpName : columnMap.getPhpName) %}
+      {%- set isI18n = relatedTable.getBehaviors['i18n'] is defined %}
+
+      '{{ columnId }}' => [
+         'field' => '{{ field }}',
+         'is_i18n' => {{ isI18n ? 'TRUE' : 'FALSE' }},
+
+      {%- if params.query_method is defined %}
+
+          'query_method' => '{{ params.query_method }}',
+
+      {%- endif %}
+
+      ],
+
+  {%- endfor %}
+
+    ],
+
+{%- endfor %}
+
+  ];
+  protected static $manyToManyRelations = [
+
+{%- for field, columnCfg in controller_config.edit.fields|default({})|merge(controller_config.list.quickedit.fields|default({})) if columnCfg.target_class is defined %}
+  {%- set relatedTable = table_map.getDatabaseMap.getTableByPhpName(entity_namespace ~ '\\' ~ columnCfg.target_class) %}
+
+    '{{ field }}' => ['{{ pluralizer.getPluralForm(columnCfg.target_class) }}', {{ relatedTable.getBehaviors['i18n'] is defined ? 'TRUE' : 'FALSE' }}],
+
+{%- endfor %}
+
+  ];
+
+{% block class_body %}
+  {%- if 'index' in actions %}
+    {%- include 'crud/actions/index.php.twig' %}
+  {%- endif %}
+
+  {%- if controller_config.export|default(false) %}
+    {%- include 'crud/actions/export.php.twig' %}
+  {%- endif %}
+{% endblock class_body %}
+}

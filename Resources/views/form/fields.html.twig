@@ -1,0 +1,115 @@
+{% extends 'bootstrap_4_layout.html.twig' %}
+
+{%- block form_label -%}
+  {%- if disabled %}
+    {%- set compound = true -%}
+  {%- endif %}
+  {{ parent() }}
+{%- endblock form_label -%}
+
+{% block form_widget_simple %}
+  {%- if disabled %}
+    <span class="plain" id="{{ id }}">
+    {%- if type|default('text') == 'datetime-local' %}
+      {{ data ? data|date('j. n. Y H:i') : null }}
+    {%- elseif type|default('text') == 'date' %}
+      {{ data ? data|date('j. n. Y') : null }}
+    {%- elseif type|default('text') == 'number' %}
+      {{ data|localizednumber }}
+    {%- elseif value is iterable %}
+      {{ value|join(', ') }}
+    {%- else %}
+      {{ value }}
+    {%- endif %}
+    </span>
+  {%- else %}
+    {{ parent() }}
+  {%- endif %}
+{% endblock form_widget_simple %}
+
+{%- block textarea_widget -%}
+  {%- if disabled %}
+    <span class="plain" id="{{ id }}">
+      {{ value is iterable ? value|join(', ') : value }}
+    </span>
+  {%- else %}
+    {{ parent() }}
+  {%- endif %}
+{%- endblock textarea_widget -%}
+
+{%- block checkbox_widget -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' filled-in chk-col-blue-grey')|trim}) -%}
+  {{ parent() }}
+{%- endblock checkbox_widget -%}
+
+{%- block choice_widget_expanded -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' form-check-list')|trim}) -%}
+  <div {{ block('widget_container_attributes') }}>
+  {%- if multiple and form|length > 5 -%}
+    {%- set isAllChecked = true -%}
+    {%- for choice in form.vars.choices -%}
+      {%- if choice is not selectedchoice(value) -%}
+        {%- set isAllChecked = false -%}
+      {%- endif -%}
+    {%- endfor -%}
+    <div class="form-check">
+      <input type="checkbox" id="{{ form.vars.id }}_all" class="filled-in chk-col-blue-grey form-check-input" data-toggle-checked="input[name^='{{ full_name }}']"{% if isAllChecked %} checked="checked"{% endif %}>
+      <label class="form-check-label" for="{{ form.vars.id }}_all">{% trans %}Vybrat vše{% endtrans %}</label>
+    </div>
+  {%- endif -%}
+  {%- for child in form %}
+    {{- form_widget(child, {
+      parent_label_class: label_attr.class|default(''),
+      translation_domain: choice_translation_domain,
+      valid: valid
+    }) -}}
+  {% endfor -%}
+  </div>
+{%- endblock choice_widget_expanded -%}
+
+{%- block choice_widget_collapsed -%}
+  {%- if multiple -%}
+    {%- set attr = attr|merge({'data-title-unselected': 'Nevybráno'|trans, 'data-title-selected': 'Vybráno'|trans}) -%}
+  {%- else %}
+    {%- set attr = attr|merge({'data-placeholder': 'Vyberte'|trans, 'data-no_results_text': 'Nenalezeno'|trans}) -%}
+  {%- endif -%}
+  {{ parent() }}
+{%- endblock choice_widget_collapsed -%}
+
+{%- block choice_widget -%}
+  {%- if disabled %}
+    <span class="plain" id="{{ id }}">
+    {%- for choice in choices|filter(choice => choice is selectedchoice(value)) %}
+      {%- if not loop.first -%}, {% endif -%}
+      {%- if edit_route is defined %}
+      <a href="{{ path(edit_route, { id: choice.value }) }}">
+      {%- endif -%}
+      {{ choice.label }}
+      {%- if edit_route is defined %}
+      </a>
+      {%- endif %}
+    {%- endfor -%}
+    </span>
+  {%- else %}
+    {{ parent() }}
+  {%- endif %}
+{%- endblock choice_widget -%}
+
+{%- block model_autocomplete_widget -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' chosen')|trim, 'data-autocomplete-url': path(autocomplete_route, { type: 'edit', output: 'id' }), 'data-autocomplete-name': name, 'data-autocomplete-length': autocomplete_length|default(3)}) -%}
+  {{- block('choice_widget') -}}
+{%- endblock model_autocomplete_widget -%}
+
+{%- block custom_widget -%}
+  {%- if disabled %}
+    <span class="plain" id="{{ id }}">
+  {%- endif %}
+  {% include template with { type: 'edit' } %}
+  {%- if disabled %}
+    </span>
+  {%- endif %}
+{%- endblock custom_widget -%}
+
+{%- block file_widget -%}
+  <input type="{{ type }}" {{ block('widget_attributes') }} {% if value is not empty %}value="{{ value }}" {% endif %}/>
+{%- endblock file_widget -%}

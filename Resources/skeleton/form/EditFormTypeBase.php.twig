@@ -1,0 +1,395 @@
+<?php
+namespace App\Form\FontaiGenerator\Edit\Base;
+
+{% block use_statements %}
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\Extension\Core\Type as SymfonyType;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Fontai\Bundle\GeneratorBundle\Form\Type as FontaiType;
+use FOS\CKEditorBundle\Form\Type as FOSType;
+use Symfony\Component\Validator\Constraints;
+use Fontai\Bundle\GeneratorBundle\Validator\Constraints as FontaiConstraints;
+
+{% endblock use_statements %}
+
+{% block class_definition %}
+class {{ form_class }} extends AbstractType
+{% endblock class_definition %}
+{
+{% block class_body %}
+  protected $isEditable;
+
+{% if controller_config.edit is defined and controller_config.edit.display is defined %}
+  /**
+   * {@inheritdoc}
+   */
+  public function buildForm(FormBuilderInterface $builder, array $options)
+  {
+    $data = $builder->getData();
+
+  {%- set creds = [] %}
+  {%- if controller_config.included_in is defined %}
+    {%- for curIncludedIn in controller_config.included_in %}
+      {%- set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+    {%- endfor %}
+  {%- endif %}
+
+    $this->isEditable = $options['user']->hasCredential(array_merge([sprintf('FontaiGenerator\\{{ entity_class }}-%s', $data->isNew() ? 'create' : 'edit')], {{ creds|json_encode }}));
+
+  {%- for groupColumns in controller_config.edit.display %}
+    {%- if groupColumns|first is iterable %}
+      {%- set tab = groupColumns %}
+
+      {%- for groupColumns in tab %}
+
+{%- block columns %}
+
+{% for id, column in groupColumns %}
+
+  {%- if id matches '/^[0-9]+$/' %}
+    {%- set columnId = column|trim('_') %}
+    {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+    {%- set columnCfg = controller_config.edit.fields[columnId] %}
+
+    {%- set type = 'SymfonyType\\TextType::class' %}
+    
+    {%- if column[:1] == '_' %}
+      {%- set type = 'FontaiType\\CustomType::class' %}
+    {%- elseif columnCfg.choices is defined %}
+      {%- set type = 'SymfonyType\\ChoiceType::class' %}
+    {%- elseif columnCfg.target_class is defined or (columnMap and columnMap.isForeignKey) %}
+      {%- set type = columnCfg.autocomplete|default(false) ? 'FontaiType\\ModelAutocompleteType::class' : 'FontaiType\\ModelType::class' %}
+    {%- elseif columnCfg.type is defined %}
+      {%- set type = (columnCfg.type == 'CKEditor' ? 'FOSType\\' : 'SymfonyType\\') ~ columnCfg.type ~ 'Type::class' %}
+    {%- elseif columnMap %}
+      {%- set typeMap = {
+        'SymfonyType\\Checkbox': ['BOOLEAN'],
+        'SymfonyType\\Integer':  ['TINYINT', 'SMALLINT', 'INTEGER', 'BIGINT', 'NUMERIC'],
+        'SymfonyType\\Number':   ['FLOAT', 'REAL', 'DOUBLE', 'DECIMAL'],
+        'SymfonyType\\Textarea': ['LONGVARCHAR', 'BLOB', 'CLOB'],
+        'FontaiType\\DateTime':  ['TIMESTAMP'],
+        'FontaiType\\Date':     ['DATE'],
+        'SymfonyType\\Time':     ['TIME'],
+        'SymfonyType\\Choice':   ['ENUM']
+      } %}
+      {%- for dst, src in typeMap %}
+        {%- if columnMap.getType in src %}
+          {%- set type = dst ~ 'Type::class' %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- set condition = [] %}
+
+    {%- if columnCfg.only_saved|default(false) %}
+      {%- set condition = condition|merge(['!$data->isNew()']) %}
+    {%- endif %}
+
+    {%- if columnCfg.nonempty|default(false) %}
+      {%- set condition = condition|merge([(columnCfg.plain|default(false) ? '' : '$data->isNew() || ') ~ '$data->get' ~ (columnMap ? columnMap.getPhpName : columnId|title|replace({'_': ''})) ~ '()']) %}
+    {%- endif %}
+
+    {%- if columnCfg.condition is defined %}
+      {%- set condition = condition|merge([columnCfg.condition]) %}
+    {%- endif %}
+
+    {%- if condition|length %}
+
+    if (({{ condition|join(') && (') }}))
+
+    {%- endif %}
+
+    $builder->add('{{ columnId }}{% if columnCfg.type|default(false) == 'File' %}_file{% endif %}', {{ type }}, [
+      'label'           => '{{ columnCfg.name|default(columnId|capitalize) }}',
+      'required'        => {{ type not in ['FontaiType\\ModelType::class', 'FontaiType\\ModelAutocompleteType::class'] and columnMap and columnMap.getType != 'BOOLEAN' and columnMap.isNotNull ? 'TRUE' : 'FALSE' }},
+
+    {%- if columnMap and columnMap.isTemporal and columnMap.getType != 'DATE' and column[:1] != '_' %}
+
+      'view_timezone'   => $options['view_timezone'],
+
+    {%- endif %}
+
+    {%- if not columnMap and columnCfg.target_class is not defined and not columnCfg.plain|default(false) %}
+
+      'mapped'          => FALSE,
+
+    {%- endif %}
+
+    {%- if ((columnMap and columnMap.isForeignKey) or columnCfg.target_class is defined) and column[:1] != '_' %}
+
+      'property_path'   => '{{ columnMap and columnMap.isForeignKey ? columnMap.getRelation.getName : pluralizer.getPluralForm(columnCfg.target_class) }}',
+
+      {%- if columnCfg.autocomplete|default(false) %}
+
+      'autocomplete_route' => '{{ route_name_prefix }}_autocomplete',
+
+        {%- if columnCfg.autocomplete.length|default(false) %}
+
+      'autocomplete_length' => {{ columnCfg.autocomplete.length }},
+        
+        {%- endif %}
+      {%- endif %}
+
+    {%- endif %}
+
+    {%- if columnCfg.plain|default(false) %}
+
+      'disabled'        => TRUE,
+
+    {%- elseif columnCfg.edit_condition|default(false) %}
+
+      'disabled'        => !({{ columnCfg.edit_condition }}),
+
+    {%- else %}
+
+      'disabled'        => !$this->isEditable,
+
+    {%- endif %}
+
+    {%- if columnCfg.placeholder is defined %}
+
+      'placeholder'     => {{ columnCfg.placeholder is same as(true) ? "''" : (columnCfg.placeholder is same as(false) ? 'FALSE' : "'" ~ columnCfg.placeholder ~ "'") }},
+
+    {%- endif %}
+
+    {%- if columnCfg.type|default(false) == 'CKEditor' and ['ckeditor_width', 'ckeditor_height'] in columnCfg %}
+
+      'config'          => [
+    
+      {%- if 'ckeditor_width' in columnCfg %}
+
+        'width'  => '{{ columnCfg.ckeditor_width }}',
+
+      {%- endif %}
+
+      {%- if 'ckeditor_height' in columnCfg %}
+
+        'height' => '{{ columnCfg.ckeditor_height }}'
+
+      {%- endif %}
+
+      ],
+
+    {%- endif %}
+
+    {%- if column[:1] == '_' %}
+
+      'template'        => 'fontai_generator/{{ entity_underscored }}/include/{{ columnId }}.html.twig',
+
+      {%- if columnCfg.multiple|default(false) %}
+
+      'multiple'        => TRUE,
+
+      {%- endif %}
+    {%- endif %}
+
+      'attr'            => [
+
+    {%- if columnCfg.target_class is defined %}
+      {%- if columnCfg.title_unselected is defined %}
+
+        'data-title-unsel' => '{{ columnCfg.title_unselected }}',
+
+      {%- endif %}
+
+      {%- if columnCfg.title_selected is defined %}
+
+        'data-title-sel'   => '{{ columnCfg.title_selected }}',
+
+      {%- endif %}
+    {%- endif %}
+
+    {%- for param, value in columnCfg.attr|default({}) %}
+
+        '{{ param }}' => '{{ value|replace({"'": "\\'"}) }}',
+
+    {%- endfor %}
+
+    {%- if columnMap and columnMap.getType == 'VARCHAR' and columnCfg.type|default(false) != 'File' %}
+
+        'maxlength' => {{ columnMap.getSize }},
+
+    {%- endif %}
+
+    {%- if columnMap and columnMap.isTemporal %}
+
+        'autocomplete' => 'off',
+
+    {%- endif %}
+
+      ],
+
+    {%- if columnCfg.choices is defined and column[:1] != '_' %}
+      {%- if columnMap and columnMap.getType == 'ARRAY' %}
+
+      'multiple'        => TRUE,
+      'expanded'        => TRUE,
+      
+      {%- endif %}
+
+      'choices'         => [
+      {%- for key, val in columnCfg.choices -%}
+        '{{ val }}' => '{{ key }}',
+      {%- endfor %}],
+
+    {%- elseif columnCfg.target_class is defined %}
+      {%- set relatedTable = table_map.getDatabaseMap.getTableByPhpName(entity_namespace ~ '\\' ~ columnCfg.target_class) %}
+
+      'class'           => {{ relatedTable.getClassName }}::class,
+      'index_property'  => 'id',
+      'multiple'        => TRUE,
+
+      {%- if columnCfg.expanded|default(false) %}
+
+      'expanded'        => TRUE,
+
+      {%- endif %}
+
+      'query'           => $options['related_query']['{{ columnId }}'] ?? {{ relatedTable.getClassName }}Query::create()
+
+      {%- if relatedTable.getBehaviors['i18n'] is defined %}
+      ->joinWithI18n($options['culture'])
+      {%- endif %},
+
+      {%- if columnCfg.query_method is defined %}
+
+      'query_method'    => '{{ columnCfg.query_method }}',
+
+      {%- endif %}
+
+      {%- if columnCfg.text_method is defined %}
+
+      'choice_label'    => function($choice) { return (is_object($choice)?$choice->{{ columnCfg.text_method }}():''); },
+
+      {%- endif %}
+
+      {%- if config['controllers'][columnCfg.target_class] is defined %}
+
+      'edit_route'      => 'fontai_generator_{{ relatedTable.getName }}_edit',
+
+      {%- endif %}
+
+    {%- elseif columnMap and columnMap.isForeignKey and column[:1] != '_' %}
+
+      'class'           => {{ columnMap.getRelatedTable.getClassName }}::class,
+      'index_property'  => 'id',
+
+      {%- if config['controllers'][columnMap.getRelatedTable.getPhpName] is defined %}
+
+      'edit_route'      => 'fontai_generator_{{ columnMap.getRelatedTable.getName }}_edit',
+
+      {%- endif %}
+
+      'query'           => $options['related_query']['{{ columnId }}'] ?? {{ columnMap.getRelatedTable.getClassName }}Query::create()
+
+      {%- if columnMap.getRelation.getForeignTable.getBehaviors['i18n'] is defined -%}
+      ->joinWithI18n($options['culture'])
+      {%- endif -%},
+
+      {%- if columnCfg.query_method is defined %}
+
+      'query_method'    => '{{ columnCfg.query_method }}',
+
+      {%- endif %}
+
+      {%- if columnCfg.text_method is defined %}
+
+      'choice_label'    => function($choice) { return (is_object($choice)?$choice->{{ columnCfg.text_method }}():''); },
+
+      {%- endif %}
+
+      {%- if columnCfg.exclude_choices is defined %}
+
+      'exclude_choices' => {{ columnCfg.exclude_choices }},
+
+      {%- endif %}
+
+    {%- endif %}
+
+    {%- if (columnMap and columnMap.isNotNull) or (controller_config.edit.validate is defined and controller_config.edit.validate[columnId] is defined) %}
+
+      'constraints'     => [
+
+      {%- if columnMap %}
+        {%- if columnMap.isNotNull and columnMap.getType != 'BOOLEAN' %}
+
+        new Constraints\NotBlank(),
+
+        {%- endif %}
+      {%- endif %}
+
+      {%- if controller_config.edit.validate is defined and controller_config.edit.validate[columnId] is defined %}
+        {%- set constraintMap = {
+          'Fontai': ['EmailDelimited', 'Unique']
+        } %}
+        {%- for constraint in controller_config.edit.validate[columnId] %}
+          {%- set constraintNamespace = '' %}
+
+          {%- for dst, src in constraintMap %}
+            {%- if constraint.validator in src %}
+              {%- set constraintNamespace = dst %}
+            {%- endif %}
+          {%- endfor %}
+
+        new {{ constraintNamespace }}Constraints\{{ constraint.validator }}([
+
+          {%- for param, value in constraint if param != 'validator' %}
+
+          '{{ param }}' => {% if value is iterable %}['{{ value|join('\', \'') }}']{% elseif value matches '/^\\d+$/' %}{{ value }}{% else %}'{{ value }}'{% endif %}, 
+
+          {%- endfor %}
+
+          {%- if constraint.validator == 'Unique' %}
+
+          'object' => $data
+
+          {%- endif %}
+
+        ]),
+
+        {%- endfor %}
+      {%- endif %}
+
+      ],
+
+    {%- endif %}
+    
+    ]);
+
+  {%- endif %}
+
+{% endfor %}
+
+{%- endblock columns %}
+
+      {%- endfor %}
+    {%- else %}
+{{ block('columns') }}
+    {%- endif %}
+  {%- endfor %}
+  }
+{% endif %}
+
+  /**
+   * {@inheritdoc}
+   */
+  public function configureOptions(OptionsResolver $resolver)
+  {
+    $resolver->setDefaults([
+      'data_class'         => '{{ entity }}',
+      'allow_extra_fields' => TRUE,
+      'view_timezone'      => NULL,
+      'related_query'      => []
+    ]);
+
+    $resolver->setRequired([
+      'action',
+      'culture',
+      'settings',
+      'user'
+    ]);
+  }
+{% endblock class_body %}
+}

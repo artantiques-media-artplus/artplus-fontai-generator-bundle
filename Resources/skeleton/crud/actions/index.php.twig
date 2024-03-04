@@ -1,0 +1,152 @@
+
+  protected function addFiltersCriteria(
+    ModelCriteria $query,
+    $filters
+  )
+  {
+
+{%- if controller_config.list.filters is defined %}
+  {%- for column in controller_config.list.filters %}
+    {%- set columnId = column|trim('_') %}
+    {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+    {%- set columnCfg = controller_config.list.fields[columnId] %}
+    
+    {%- if not columnCfg.filter_criteria_disabled|default(false) %}
+
+      {%- if (columnMap and columnMap.isTemporal) or (columnMap and columnMap.getType in ['INTEGER', 'TINYINT', 'SMALLINT', 'BIGINT', 'FLOAT', 'DOUBLE', 'DECIMAL', 'NUMERIC', 'REAL'] and columnCfg.filter_range|default(false)) %}
+
+    if (isset($filters['{{ columnId }}']))
+    {
+      if (isset($filters['{{ columnId }}']['from']) && $filters['{{ columnId }}']['from'] !== '') $query->filterBy{{ columnMap.getPhpName }}($filters['{{ columnId }}']['from'], Criteria::GREATER_EQUAL);
+      if (isset($filters['{{ columnId }}']['to'])   && $filters['{{ columnId }}']['to'] !== '')   $query->filterBy{{ columnMap.getPhpName }}($filters['{{ columnId }}']['to'],   Criteria::LESS_EQUAL);
+    }
+
+      {%- elseif columnCfg.target_class is defined or columnMap %}
+
+    if (isset($filters['{{ columnId }}']) && Utils::notEmpty($filters['{{ columnId }}']))
+    {
+
+        {%- if columnCfg.target_class is defined %}
+
+          {%- for relation in table_map.getRelations %}
+            {%- if relation.getType == 2 %}
+              {%- if relation.getLocalTable.isCrossRef %}
+                  {%- for relation2 in relation.getLocalTable.getRelations %}
+                    {%- if relation2.getForeignTable.getPhpName == columnCfg.target_class %}
+
+      $query->leftJoin{{ relation.getLocalTable.getPhpName }}()
+      ->use{{ relation.getLocalTable.getPhpName }}Query(NULL, Criteria::LEFT_JOIN)
+        ->filterBy{{ relation2.getLocalColumns[0].getPhpName }}($filters['{{ columnId }}'])
+      ->endUse();
+
+                    {%- endif %}
+                  {%- endfor %}
+              {%- endif %}
+            {%- endif %}
+          {%- endfor %}
+
+        {%- else %}
+          {%- set isI18n = table_map_i18n and table_map_i18n.hasColumn(columnId) %}
+
+      $query{% if isI18n %}->useI18nQuery(){% endif %}->filterBy{{ columnMap.getPhpName }}(
+        is_array($filters['{{ columnId }}'])
+        ? $filters['{{ columnId }}']
+        : {% if columnCfg.filter_fulltext|default(false) -%}
+        '%' . trim($filters['{{ columnId }}'], '*') . '%'
+          {%- else -%}
+        strtr($filters['{{ columnId }}'], '*', '%')
+          {%- endif %},
+        is_array($filters['{{ columnId }}']) ? Criteria::IN : Criteria::LIKE
+      ){% if isI18n %}->endUse(){% endif %};
+
+        {%- endif %}
+
+    }
+
+      {%- endif %}
+    {%- endif %}
+  {%- endfor %}
+{%- endif %}
+
+  }
+
+  protected function addIndexQueryJoins(ModelCriteria $query, string $culture = NULL)
+  {
+
+{%- for columnId, columnCfg in controller_config.list.fields %}
+  {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+
+  {%- if columnMap and columnMap.isForeignKey and columnMap.getRelation.getForeignTable.getName != table_map.getName %}
+    {%- set relationAlias = 'RelatedBy' in columnMap.getRelation.getName ? columnMap.getRelation.getName : null %}
+
+    $query->leftJoinWith('{{ columnMap.getRelation.getName }}{% if relationAlias %} {{ relationAlias }}{% endif %}')
+    {%- if columnMap.getRelation.getForeignTable.getBehaviors['i18n'] is defined -%}
+      ->use{{ columnMap.getRelation.getName }}Query({% if relationAlias %}'{{ relationAlias }}'{% else %}NULL{% endif %}, Criteria::LEFT_JOIN)->joinWithI18n($culture)->endUse()
+    {%- endif -%};
+
+  {%- endif %}
+{%- endfor %}
+
+  }
+
+  protected function getRelatedQueries(string $culture = NULL)
+  {
+    return [
+
+{%- for relation in table_map.getRelations if relation.getForeignTable.getName != table_map.getName %}
+
+      '{{ relation.getLocalColumns[0].getName }}' => {% if controller_config.list.fields[relation.getLocalColumns[0].getName].query is defined %}{{ controller_config.list.fields[relation.getLocalColumns[0].getName].query }}{% else -%}
+
+      {{ relation.getForeignTable.getClassName }}Query::create()
+
+    {%- if relation.getForeignTable.getBehaviors['i18n'] is defined -%}
+      
+      ->joinWithI18n($culture)
+
+    {%- endif -%}
+
+    {%- for relation2 in relation.getForeignTable.getRelations if relation2.getForeignTable.getName != relation.getForeignTable.getName %}
+      {%- set relation2Alias = 'RelatedBy' in relation2.getName ? relation2.getName : null %}
+
+      ->leftJoinWith('{{ relation2.getName }}{% if relation2Alias %} {{ relation2Alias }}{% endif %}')
+        
+      {%- if relation2.getForeignTable.getBehaviors['i18n'] is defined %}
+
+      ->use{{ relation2.getName }}Query({% if relation2Alias %}'{{ relation2Alias }}'{% else %}NULL{% endif %}, Criteria::LEFT_JOIN)
+        ->joinWithI18n($culture)
+      ->endUse()
+
+      {%- endif %}
+    {%- endfor %}
+  {%- endif %},
+
+{%- endfor %}
+
+{%- for columnId, columnCfg in controller_config.list.fields if columnCfg.target_class is defined %}
+
+      '{{ columnId }}' => {% if columnCfg.query is defined %}{{ columnCfg.query }}{% else -%}
+    {%- set relatedTable = table_map.getDatabaseMap.getTableByPhpName(entity_namespace ~ '\\' ~ columnCfg.target_class) %}
+
+      {{ relatedTable.getClassName }}Query::create()
+
+    {%- if relatedTable.getBehaviors['i18n'] is defined -%}
+      ->joinWithI18n($culture)
+    {%- endif -%}
+
+    {%- for relation in relatedTable.getRelations if relation.getForeignTable.getName != relatedTable.getName %}
+      {%- set relationAlias = 'RelatedBy' in relation.getName ? relation.getName : null %}
+
+      ->leftJoinWith('{{ relation.getName }}{% if relationAlias %} {{ relationAlias }}{% endif %}')
+        
+      {%- if relation.getForeignTable.getBehaviors['i18n'] is defined -%}
+      ->use{{ relation.getName }}Query({% if relationAlias %}'{{ relationAlias }}'{% else %}NULL{% endif %}, Criteria::LEFT_JOIN)
+        ->joinWithI18n($culture)
+      ->endUse()
+      {%- endif -%}
+    {%- endfor %}
+  {%- endif %},
+
+{%- endfor %}
+
+    ];
+  }

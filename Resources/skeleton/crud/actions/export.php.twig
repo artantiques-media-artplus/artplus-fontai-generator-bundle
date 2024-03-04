@@ -1,0 +1,113 @@
+
+  protected function getExportColumnTitles()
+  {
+    $titles = [];
+{% for column in controller_config.export.display %}
+  {%- set columnId = column|trim('_') %}
+  {%- set columnCfg = controller_config.export.fields[columnId] %}
+
+  {%- if columnCfg.condition is defined %}
+
+    if ({{ columnCfg.condition }})
+    {
+
+  {%- endif %}
+ 
+    $titles[] = '{{ columnCfg.name|default(columnId|capitalize) }}';
+
+  {%- if columnCfg.condition is defined %}
+
+    }
+
+  {%- endif %}
+
+{%- endfor %}
+
+
+    return $titles;
+  }
+
+  protected function getExportRowData($object)
+  {
+    $dateTimeZone = $this->get('twig')->getExtension('Twig\Extension\CoreExtension')->getTimezone();
+
+    $rowData = [];
+{% for column in controller_config.export.display %}
+  {%- set columnId = column|trim('_') %}
+  {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+  {%- set columnCfg = controller_config.export.fields[columnId] %}
+
+  {%- if columnCfg.condition is defined %}
+
+    if ({{ columnCfg.condition }})
+    {
+
+  {%- endif %}
+
+    $rowData[] = {% include 'crud/actions/helper/exportField.php.twig' %};
+
+  {%- if columnCfg.condition is defined %}
+
+    }
+
+  {%- endif %}
+
+{%- endfor %}
+
+
+    return $rowData;
+  }
+
+  protected function getExportRowStyles()
+  {
+    $styles = [];
+{% for column in controller_config.export.display %}
+  {%- set columnId = column|trim('_') %}
+  {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+  {%- set columnCfg = controller_config.export.fields[columnId] %}
+  {%- set formatCode = false %}
+
+  {%- if columnCfg.condition is defined %}
+
+    if ({{ columnCfg.condition }})
+    {
+
+  {%- endif %}
+
+  {%- if columnCfg.export_format is defined %}
+    {%- set formatCode = columnCfg.export_format %}
+  {%- elseif columnMap %}
+    {%- if columnMap.isTemporal %}
+      {%- set formatCode = columnMap.getType == 'DATE' ? 'd. m. yyyy' : 'd. m. yyyy, h:mm' %}
+    {%- elseif columnMap.getType in ['INTEGER', 'TINYINT', 'SMALLINT', 'BIGINT'] and not columnMap.isForeignKey %}
+      {%- set formatCode = '#,##0' %}
+    {%- elseif columnMap.getType in ['FLOAT', 'DOUBLE', 'NUMERIC', 'DECIMAL', 'REAL'] %}
+      {%- set formatCode = '#,##0.00' %}
+    {%- endif %}
+  {%- endif %}
+
+  {%- if columnCfg.units is defined %}
+    {%- set formatCode = (formatCode ? formatCode : '#,##0') ~ '\\ \\' ~ columnCfg.units|split('')|join('\\') %}
+  {%- endif %}
+  
+  {%- if formatCode %}
+
+    $styles[] = '{{ formatCode }}';
+
+  {%- else %}
+
+    $styles[] = NULL;
+
+  {%- endif %}
+
+  {%- if columnCfg.condition is defined %}
+
+    }
+
+  {%- endif %}
+
+{%- endfor %}
+
+
+    return $styles;
+  }

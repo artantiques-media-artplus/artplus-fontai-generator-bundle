@@ -1,0 +1,51 @@
+{% if 'index' in actions %}
+{{ route_name_prefix }}_index:
+    path:       /
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::index
+    methods:    GET
+
+{{ route_name_prefix }}_batch:
+    path:       /batch/{action}
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::batch
+    methods:    POST
+
+{{ route_name_prefix }}_autocomplete:
+    path:       /autocomplete
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::autocomplete
+    methods:    POST
+{% endif %}
+
+{% if controller_config.export|default(false) %}
+{{ route_name_prefix }}_export:
+    path:       /export
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::export
+    methods:    GET
+{% endif %}
+
+{% if 'new' in actions %}
+{{ route_name_prefix }}_create:
+    path:       /create
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::create
+    methods:    [GET, POST]
+{% endif %}
+
+{% if 'edit' in actions %}
+{{ route_name_prefix }}_edit:
+    path:       /{id}/edit
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::edit
+    methods:    [GET, POST]
+{% endif %}
+
+{% if controller_config.list.quickedit|default(false) %}
+{{ route_name_prefix }}_quickedit:
+    path:       /{id}/quickedit
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::quickedit
+    methods:    POST
+{% endif %}
+
+{% if 'delete' in actions %}
+{{ route_name_prefix }}_delete:
+    path:       /{id}/delete
+    controller: App\Controller\FontaiGenerator\{{ entity_class }}Controller::delete
+    methods:    DELETE
+{% endif %}

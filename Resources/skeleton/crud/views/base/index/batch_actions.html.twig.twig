@@ -1,0 +1,15 @@
+{%- for id, params in controller_config.list.batch_actions|default([]) %}
+  {%- if params is not iterable %}
+    {%- set params = {} %}
+  {%- endif %}
+
+{{ "{%- if batchActionCredentials['" ~ id ~ "']|default(false) %}" }}
+
+  <button type="submit" data-url="{{ "{{ path('" ~ route_name_prefix ~ "_batch', { action: '" ~ id ~ "', culture: app.session.get('culture') }|merge(query_string)) }}" }}" data-method="post" data-input="input[name^='batch[{{ entity_underscored }}]']" class="btn btn-light btn-with-icon action_{{ id }}" data-confirm="{{ "{% trans %}" }}Jste si jist?{{ "{% endtrans %}" }}">
+      <span class="btn-with-icon-icon"><svg class="icon icon-{{ id }}"><use xlink:href="#icon-{{ id }}"></use></svg></span>
+      <strong class="btn-with-icon-text">{{ "{% trans %}" }}{{ params.name }}{{ "{% endtrans %}" }}</strong>
+  </button>
+
+{{ "{% endif %}" }}
+
+{%- endfor %}

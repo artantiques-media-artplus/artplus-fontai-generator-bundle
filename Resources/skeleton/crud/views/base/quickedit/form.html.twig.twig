@@ -1,0 +1,25 @@
+{%- if controller_config.list.quickedit|default(false) %}
+    {{ "{%- form_theme quickedit_form '@FontaiGenerator/form/fields.html.twig' %}" }}
+
+    <div class="row editFormDiv">
+        {{ "{{ form_widget(quickedit_form._token) }}" }}
+        {%- for column in controller_config.list.quickedit.display %}
+            {%- set columnId = column|trim('_') %}
+            {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+            {%- set columnCfg = controller_config.list.quickedit.fields[columnId] %}
+
+            {%- set columnIdTranslated = columnId ~ (columnCfg.type|default(false) == 'File' ? "_file" : "") %}
+
+            {{ "{%- if quickedit_form.offsetExists('" ~ columnIdTranslated ~ "') %}" }}
+            {% if columnCfg.separated|default(false) %}<div class="w-100"></div>{% endif %}
+            <div class="form-group{%- if columnCfg.field_size is defined %} {{ columnCfg.field_size }}{% else %} col{% endif %}">
+                {{ "{{ form_label(quickedit_form." ~ columnIdTranslated ~ ") }}" }}
+                {{ "{{ form_widget(quickedit_form." ~ columnIdTranslated ~ ") }}" }}
+                {%- if columnCfg.units is defined %}
+                    <span class="units">{{ "{% trans %}" }}{{ columnCfg.units }}{{ "{% endtrans %}" }}</span>
+                {%- endif %}
+            </div>
+            {{ "{%- endif %}" }}
+        {%- endfor %}
+    </div>
+{%- endif %}

@@ -1,0 +1,31 @@
+{%- if column[:1] == '_' -%}
+
+  {{ "{% include 'fontai_generator/" ~ entity_class ~ "/include/" ~ columnId ~ ".html.twig' with { type: 'export' } %}" }}
+
+{%- elseif columnCfg.target_class is defined -%}
+
+      implode("{{ columnCfg.delimiter|default(', ') }}", $object->get{{ pluralizer.getPluralForm(columnCfg.target_class) }}()->{% if columnCfg.text_method|default(false) %}getColumnValues('{{ columnCfg.text_method[3:] }}'){% else %}toKeyValue(){% endif %})
+
+{%- elseif columnMap and columnMap.isForeignKey -%}
+
+      ($foreignObject = $object->get{{ columnMap.getRelation.getName }}()) ? $foreignObject->{{ columnCfg.text_method|default('__toString') }}() : NULL
+
+{%- elseif columnMap and columnMap.getType == 'BOOLEAN' and columnCfg.choices is not defined -%}
+
+      $object->get{{ columnMap.getPhpName }}() ? 'Ano' : 'Ne'
+
+{%- elseif columnMap and columnMap.isTemporal -%}
+
+      ($value = $object->get{{ columnMap.getPhpName }}()) ? $value->setTimezone($dateTimeZone) : NULL
+
+{%- else %}
+  {%- if columnCfg.choices is defined -%}
+
+      [{% for key, val in columnCfg.choices -%}'{{ key }}' => '{{ val }}', {% endfor %}][$object->get{{ columnMap.getPhpName }}()]
+
+  {%- else -%}
+
+      $object->get{{ columnMap ? columnMap.getPhpName : columnId|title|replace({'_': ''}) }}()
+
+  {%- endif %}
+{%- endif %}

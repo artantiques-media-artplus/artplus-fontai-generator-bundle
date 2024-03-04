@@ -1,0 +1,139 @@
+{% block extends %}
+    {{ "{% extends app.request.attributes.get('is_master_request') ? '@FontaiGenerator/wrapper.html.twig' : '@FontaiGenerator/standalone.html.twig' %}" }}
+{% endblock extends %}
+
+{% block title %}
+{{ "{% block title %}{{ title|trans }} | {{ parent() }}{% endblock %}" }}
+{% endblock %}
+
+{% block content %}
+    {{ "{% block content %}" }}
+    {{ "{%- if not app.request.attributes.get('is_master_request') %}" }}
+    
+    <div class="d-flex actions-wrap">
+        <div class="d-flex actions">
+            <a class="btn collapsed text-uppercase with-caret" data-toggle="collapse" role="button" href="#collapse-{{ entity_underscored }}-edit">
+                <svg class="icon icon-caret-down"><use xlink:href="#icon-caret-down"></use></svg>
+                <svg class="icon icon-edit"><use xlink:href="#icon-edit"></use></svg>
+                <span>{{ "{{ app.request.attributes.get('tab_title')|trans }}" }}</span>
+            </a>
+        </div>
+        {% include 'crud/views/helper/perPage.html.twig' %}
+    </div>
+
+    {{ "{%- endif %}" }}
+
+        {{ "{%- include 'fontai_generator/" ~ entity_underscored ~ "/edit/messages.html.twig' %}" }}
+        {{ "{%- include 'fontai_generator/" ~ entity_underscored ~ "/edit/header.html.twig' %}" }}
+        {{ "{%- include 'fontai_generator/" ~ entity_underscored ~ "/edit/form.html.twig' %}" }}
+        {{ "{%- include 'fontai_generator/" ~ entity_underscored ~ "/edit/footer.html.twig' %}" }}
+
+    {%- if controller_config.edit.include is defined %}
+
+        {{ "{%- if " ~ entity_underscored ~ " is defined and not " ~ entity_underscored ~ ".isNew %}" }}
+
+        {%- for id, params in controller_config.edit.include %}
+            {% set condition = [] %}
+
+            {%- if params.list is defined %}
+                {%- set condition = condition|merge([params.list.condition|default('true')]) %}
+            {%- endif %}
+
+            {%- if params.edit is defined %}
+                {%- set condition = condition|merge([params.edit.condition|default('true')]) %}
+            {%- endif %}
+
+            {%- if condition and 'true' not in condition %}
+
+            {{ "{%- if " ~ condition|join(' or ') ~ " %}" }}
+
+            {%- endif %}
+
+            {{ "{% block included_" ~ id ~ " %}" }}
+            <div class="card" id="included-{{ id }}">
+                <div class="card-header small text-uppercase">
+                    <a{% if params.list.collapsed|default(false) %} class="collapsed"{% endif %} data-toggle="collapse" href="#collapse-included-{{ id }}" aria-expanded="{{ params.list.collapsed|default(false) ? 'false' : 'true' }}">
+                        <svg class="icon icon-caret-down">
+                            <use xlink:href="#icon-caret-down"></use>
+                        </svg>
+                        {{ "{% trans %}" }}{{ params.title|default(config.controllers[id].list.title|default('Nezadáno')) }}{{ "{% endtrans %}" }}
+                    </a>
+                </div>
+                <div class="collapse{% if not params.list.collapsed|default(false) %} show{% endif %}" id="collapse-included-{{ id }}">
+
+            {%- if params.edit|default(false) %}
+                {%- if params.edit.condition is defined %}
+              
+                {{ "{% if " ~ params.edit.condition ~ " %}" }}
+
+                {%- else %}
+                    {%- set creds = [] %}
+                    {%- if config.controllers[id].included_in is defined %}
+                        {%- for curIncludedIn in config.controllers[id].included_in %}
+                          {%- set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+                        {%- endfor %}
+                    {%- endif %}
+
+                {{ "{% if app.user.hasCredential(['FontaiGenerator\\\\" ~ id ~ "-create']" ~ (creds|length ? "|merge(" ~ creds|json_encode ~ ")" : "") ~ ") %}" }}
+              
+                {%- endif %}
+
+                    {{ "{{ render(controller(
+                        'App\\\\Controller\\\\FontaiGenerator\\\\" ~ id ~ "Controller::create',
+                        {
+                            " ~ entity_underscored ~ ": " ~ entity_underscored ~ ",
+                            tab_title: '" ~ params.edit.title|default('Nový záznam') ~ "'
+                        }
+                    )) }}" }}
+                {{ "{% endif %}" }}
+              
+            {%- endif %}
+
+            {%- if params.list|default(false) %}
+                {%- if params.list.condition is defined %}
+                
+                {{ "{% if " ~ params.list.condition ~ " %}" }}
+                
+                {%- endif %}
+
+                    {{ "{{ render(controller(
+                        'App\\\\Controller\\\\FontaiGenerator\\\\" ~ id ~ "Controller::index',
+                        {
+                            " ~ entity_underscored ~ ": " ~ entity_underscored ~ "
+                        }
+                    )) }}" }}
+
+                {%- if params.list.condition is defined %}
+                
+                {{ "{% endif %}" }}
+                
+                {%- endif %}
+            {%- endif %}
+
+              </div>
+            </div>
+            {{ "{% endblock included_" ~ id ~ " %}" }}
+
+            {%- if condition and 'true' not in condition %}
+
+            {{ "{%- endif %}" }}
+
+            {%- endif %}
+        {%- endfor %}
+
+        {{ "{%- endif %}" }}
+
+    {%- endif %}
+
+    {%- if controller_config.log|default(config.log) %}
+
+        {{ "{%- if " ~ entity_underscored ~ " is defined and not " ~ entity_underscored ~ ".isNew and app.request.attributes.get('is_master_request') and " ~ controller_config.log.condition|default("true") ~ " %}" }}
+
+            {{ "{{ log('" ~ entity|replace({'\\': '\\\\'}) ~ "', " ~ entity_underscored ~ ".getId, edit_form_mapping) }}" }}
+
+        {{ "{%- endif %}" }}
+
+    {%- endif %}
+
+    {{ "{% endblock content %}" }}
+{% endblock content %}

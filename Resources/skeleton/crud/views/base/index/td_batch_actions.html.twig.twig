@@ -1,0 +1,12 @@
+{%- if controller_config.list.batch_actions|default(false)|length %}
+
+{{ "{%- if batchActionCredentials|length %}" }}
+
+<td class="batch">
+    <input type="checkbox" name="batch[{{ entity_underscored }}][]" id="batch_{{ entity_underscored }}_{{ "{{ " ~ entity_underscored ~ ".getId }}" }}" class="batchCheck filled-in chk-col-blue-grey" value="{{ "{{ " ~ entity_underscored ~ ".getId }}" }}">
+    <label for="batch_{{ entity_underscored }}_{{ "{{ " ~ entity_underscored ~ ".getId }}" }}" class="batchLabel"></label>
+</td>
+
+{{ "{%- endif %}" }}
+
+{%- endif %}

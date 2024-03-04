@@ -1,0 +1,9 @@
+{% block extends %}
+    {{ "{% extends '@FontaiGenerator/standalone.html.twig' %}" }}
+{% endblock extends %}
+
+{% block content %}
+    {{ "{% block content %}" }}
+        {{ "{%- include 'fontai_generator/" ~ entity_underscored ~ "/index/filters.html.twig' %}" }}
+    {{ "{% endblock content %}" }}
+{% endblock content %}

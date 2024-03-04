@@ -1,0 +1,111 @@
+.dataTables_paginate {
+    text-align: right;
+    padding-top: 0.25rem;
+    font-size: 0.875rem;
+    display: flex;
+    justify-content: flex-end;
+
+    > span {
+        display: flex;
+    }
+
+    .paginate_button, .ellipsis {
+        display: block;
+        min-width: 2.5rem;
+        height: 2.5rem;
+        line-height: 2.5rem;
+        text-align: center;
+        padding: 0 0.5rem;
+        margin-top: 0.3rem;
+        margin-right: 0.3rem;
+    }    
+
+    .paginate_button {
+        box-sizing: border-box;
+        text-decoration: none;
+        cursor: pointer;
+        color: $bodytext;
+        background: #F2F2F2;
+
+        svg {
+            fill: $bodytext;
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
+        }
+
+        &:hover {
+            color: white;
+            background-color: $themecolor;
+
+            svg {
+                fill: $white;
+            }
+        }
+
+        &:active {
+            outline: none;
+            color: white;
+            background-color: $bodytext;
+
+            svg {
+                fill: $white;
+            }
+        }
+
+        &.first-page, &.last-page {
+            padding: 0;
+        }
+
+        &.last-page {
+            margin-right: 0;
+        }
+
+        &.previous-page, &.next-page {
+            padding: 0;
+            min-width: 5rem;
+        }
+
+        &.disabled {
+            &, &:hover, &:active {
+                cursor: default;
+                color: #D4D4D4;
+                box-shadow: none;
+                background: #F2F2F2;
+
+                svg {
+                    fill: #D4D4D4;
+                }
+            }
+        }
+
+        &.current {
+            &, &:hover {
+                color: $white;
+                background-color: #333333;
+
+                svg {
+                    fill: $white;
+                }
+            }
+        }
+
+        @media (max-width: 860px) {
+            &.previous-page, &.next-page {
+                display: none;
+            }
+        }
+    }
+
+    @media (max-width: 480px) {
+        > span, .paginate_button {
+            flex-grow: 1;
+        }
+    }
+}
+
+.tasksWrap .dataTables_paginate .paginate_button {
+    &.previous-page, &.next-page {
+        min-width: 2.5rem;
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "name": "fontai/generator-bundle",
+    "version": "1.0",
+    "description": "Fontai Propel CRUD generator",
+    "type": "symfony-bundle",
+    "require": {
+        "php": ">=7.0",
+        "ckfinder/ckfinder-symfony-bundle": "^3.5",
+        "doctrine/inflector": "^1.4",
+        "fontai/log-bundle": "*",
+        "fontai/propel2-diff-behavior": "*",
+        "fontai/propel2-eventdispatcher-behavior": "*",
+        "fontai/propel2-fileupload-behavior": "*",
+        "fontai/propel2-navigation": "*",
+        "fontai/propel2-schema-locator-bundle": "*",
+        "fontai/spout-extended": "*",
+        "fontai/text-bundle": "*",
+        "friendsofsymfony/ckeditor-bundle": "^2.0",
+        "liip/imagine-bundle": "^2.6",
+        "propel/propel-bundle": "~4.0@dev",
+        "symfony/asset": ">=4.4.0",
+        "symfony/expression-language": ">=4.4.0",
+        "symfony/security-bundle": ">=4.4.0",
+        "symfony/swiftmailer-bundle": "^3.0",
+        "symfony/twig-bundle": ">=4.4.0",
+        "twig/extensions": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fontai\\Bundle\\GeneratorBundle\\": ""
+        }
+    }
+}

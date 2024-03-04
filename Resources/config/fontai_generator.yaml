@@ -1,0 +1,54 @@
+services:
+    _defaults:
+        public: false
+
+    App\Controller\FontaiGenerator\:
+        resource: '%kernel.project_dir%/src/Controller/FontaiGenerator/*'
+        exclude: '%kernel.project_dir%/src/Controller/FontaiGenerator/Base'
+
+    Fontai\Bundle\GeneratorBundle\Command\GeneratePropelCrudCommand:
+        arguments:
+            - '@service_container'
+            - '@filesystem'
+        tags:
+            -  { name: console.command }
+
+    Fontai\Bundle\GeneratorBundle\Command\GeneratePropelFormCommand:
+        arguments:
+            - '@service_container'
+            - '@filesystem'
+        tags:
+            -  { name: console.command }
+
+    Fontai\Bundle\GeneratorBundle\EventSubscriber\DisableBrowserCacheSubscriber:
+        tags:
+            - { name: kernel.event_subscriber }
+
+    Fontai\Bundle\GeneratorBundle\EventSubscriber\RequestSubscriber:
+        tags:
+            - { name: kernel.event_subscriber }
+        arguments:
+            - '@security.token_storage'
+            - '%fontai_generator%'
+
+    Fontai\Bundle\GeneratorBundle\Security\Authorization\Voter\Voter:
+        arguments:
+            - '@request_stack'
+        tags:
+            - { name: security.voter }
+
+    Fontai\Bundle\GeneratorBundle\Twig\FontaiGeneratorExtension:
+        arguments:
+            - '@security.token_storage'
+        tags:
+            - { name: twig.extension }
+
+    Fontai\Spout\Writer\XLSX\Writer:
+        factory: ['Fontai\Spout\Writer\WriterFactory', create]
+        arguments:
+            - 'xlsx'
+
+    Fontai\Spout\Writer\CSV\Writer:
+        factory: ['Fontai\Spout\Writer\WriterFactory', create]
+        arguments:
+            - 'csv'

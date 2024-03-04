@@ -1,0 +1,204 @@
+{{ "{%- if not pager.getNbResults %}" }}
+
+<div class="card-body">
+    {{ "{% trans %}" }}Žádná položka{{ "{% endtrans %}" }}
+</div>
+
+{{ "{%- else %}" }}
+    {{ "{%- set dataCredentials = {" }}
+
+{%- for column in controller_config.list.display %}
+    {%- set columnId = column|trim('_') %}
+    {%- set columnCfg = controller_config.list.fields[columnId] %}
+    
+        '{{ columnId }}': {% if columnCfg.credentials is defined %}app.user.hasCredential({{ columnCfg.credentials|json_encode }}){% else %}true{% endif %}{% if not loop.last %},{% endif %}
+
+{%- endfor %}
+
+    {{ "}|filter(v => v) %}" }}
+
+{%- set objectActionCredentials = {} %}
+
+{%- if controller_config.list.quickedit|default(false) %}
+    {%- set creds = ['FontaiGenerator\\' ~ entity_class ~ '-edit'] %}
+    {%- for curIncludedIn in controller_config.included_in|default([]) %}
+        {% set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+    {%- endfor %}
+
+    {%- set objectActionCredentials = objectActionCredentials|merge({ 'quickedit': creds }) %}
+{%- endif %}
+
+{%- for id, params in controller_config.list.object_actions|default([]) %}
+    {%- if params is not iterable %}
+        {%- set params = {} %}
+    {%- endif %}
+
+    {%- if params.credentials is defined %}
+        {%- set creds = params.credentials %}
+    {%- else %}
+        {%- set creds = ['FontaiGenerator\\' ~ entity_class ~ '-' ~ id|replace({'edit': 'index'})] %}
+        {%- if controller_config.included_in is defined %}
+            {%- for curIncludedIn in controller_config.included_in %}
+                {%- set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+            {%- endfor %}
+        {%- endif %}
+    {%- endif %}
+
+    {%- set objectActionCredentials = objectActionCredentials|merge({ (id): creds }) %}
+{%- endfor %}
+
+    {{ "{%- set objectActionCredentials = {" }}
+
+{%- for id, credentials in objectActionCredentials %}
+
+        '{{ id }}': app.user.hasCredential({{ credentials|json_encode }}){% if not loop.last %},{% endif %}
+
+{%- endfor %}
+
+    {{ "}|filter(v => v) %}" }}
+
+{%- set batchActionCredentials = {} %}
+{%- set batchActionConditions = {} %}
+
+{%- for id, params in controller_config.list.batch_actions|default([]) %}
+    {%- if params is not iterable %}
+        {%- set params = {} %}
+    {%- endif %}
+
+    {%- if params.credentials is defined %}
+        {%- set creds = params.credentials %}
+    {%- else %}
+        {%- set creds = ['FontaiGenerator\\' ~ entity_class ~ '-' ~ id] %}
+        {%- if controller_config.included_in is defined %}
+            {%- for curIncludedIn in controller_config.included_in %}
+                {%- set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+          {%- endfor %}
+        {%- endif %}
+    {%- endif %}
+
+    {%- set batchActionCredentials = batchActionCredentials|merge({ (id): creds }) %}
+    {%- if params.condition is defined %}
+        {%- set batchActionConditions = batchActionConditions|merge({ (id): params.condition }) %}
+    {%- endif %}
+{%- endfor %}
+
+    {{ "{%- set batchActionCredentials = {" }}
+
+{%- for id, credentials in batchActionCredentials %}
+
+        '{{ id }}': (app.user.hasCredential({{ credentials|json_encode }})){% if batchActionConditions[id] is defined %} and ({{ batchActionConditions[id] }}){% endif %}{% if not loop.last %},{% endif %}
+
+{%- endfor %}
+
+    {{ "}|filter(v => v) %}" }}
+
+{{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/header.html.twig' %}" }}
+<div class="table-responsive">
+    <div class="dataTables_wrapper">
+        <table class="display nowrap table dataTable" id="{{ entity_underscored }}_listTable" role="grid">
+            <thead>
+                <tr role="row">
+                    <th class="table-padding-left"><span>&nbsp;</span></th>
+
+{%- if controller_config.list.batch_actions|default(false)|length %}
+
+    {{ "{%- if batchActionCredentials|length %}" }}
+
+                    <th>
+                        <input type="checkbox" id="batch_{{ entity_underscored }}" class="filled-in chk-col-blue-grey batchCheckAll" value="1" onchange="$('#{{ entity_underscored }}_listTable input.batchCheck').prop('checked', this.checked).trigger('change'); $('#{{ entity_underscored }}_listTable input.batchCheckAll').prop('checked', this.checked);" onclick="$(this).blur();">
+                        <label for="batch_{{ entity_underscored }}" class="batchLabel"></label>
+                    </th>
+
+    {{ "{%- endif %}" }}
+
+{%- endif %}
+
+                    {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/thead.html.twig' %}" }}
+
+    {{ "{%- if objectActionCredentials|length %}" }}
+
+                    <th class="action" colspan="{{ "{{ objectActionCredentials|length }}" }}">{{ "{% trans %}" }}Akce{{ "{% endtrans %}" }}</th>
+
+    {{ "{%- endif %}" }}
+
+                    <th class="table-padding-right"><span>&nbsp;</span></th>
+                </tr>
+            </thead>
+            <tbody>
+
+    {{ "{%- set even = true %}" }}
+    {{ "{%- set firstRow = true %}" }}
+    {{ "{%- for " ~ entity_underscored ~ " in pager %}" }}
+        {{ "{%- set even = not even %}" }}
+        {{ "{%- set className = [even ? 'even' : 'odd'] %}" }}
+
+        {{ "{%- if method_exists(" ~ entity_underscored ~ ", 'getRowClassName') %}" }}
+            {{ "{%- set className = className|merge([" ~ entity_underscored ~ ".getRowClassName]) %}" }}
+        {{ "{%- endif %}" }}
+
+                <tr id="row{{ "{{ " ~ entity_underscored ~ ".getId }}" }}"{{ "{% if className|length %}" }} class="{{ "{{ className|join(' ') }}" }}"{{ "{% endif %}" }}>
+                    <td class="table-padding-left"><span>&nbsp;</span></td>
+                    {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/td_batch_actions.html.twig' %}" }}
+                    {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/td.html.twig' %}" }}
+                    {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/td_actions.html.twig' %}" }}
+                    <td class="table-padding-right"><span>&nbsp;</span></td>
+                </tr>
+
+        {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/quickedit_row.html.twig' %}" }}
+        {{ "{%- set firstRow = false %}" }}
+    {{ "{%- endfor %}" }}
+
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="card-body pt-0">
+    <div class="row no-gutters">
+        <div class="col-6">
+
+{%- if controller_config.list.batch_actions|default(false)|length %}
+
+    {{ "{%- if batchActionCredentials|length %}" }}
+
+            {{ "{% trans %}" }}Vybrané{{ "{% endtrans %}" }}:
+
+    {{ "{%- endif %}" }}
+
+{%- endif %}
+
+        </div>
+        <div class="col-6 text-right nb-results">
+
+{%- if controller_config.list.display_count|default(true) %}
+
+            {{ "{% trans %}" }}Počet položek{{ "{% endtrans %}"}}: {{ "{{ pager.getNbResults }}" }}
+
+{%- endif %}
+
+        </div>
+    </div>
+    <div class="row no-gutters">
+        <div class="col-12 col-md-6 batch-actions">
+
+{%- if controller_config.list.batch_actions|default(false)|length %}
+
+            {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/batch_actions.html.twig' %}" }}
+
+{%- endif %}
+
+        </div>
+        <div class="col-12 col-md-6 text-right pager">
+
+{%- if controller_config.list.display_pager|default(true) %}
+
+            {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/pager.html.twig' %}" }}
+
+{%- endif %}
+
+        </div>
+    </div>
+</div>
+
+{{ "{%- endif %}" }}
+
+{{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/footer.html.twig' %}" }}

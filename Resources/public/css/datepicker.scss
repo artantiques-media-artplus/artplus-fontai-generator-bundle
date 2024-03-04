@@ -1,0 +1,288 @@
+.bootstrap-datetimepicker-widget {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 10rem;
+  padding: 1rem;
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+  color: $fontai-black;
+  text-align: left;
+  background: $fontai-light-gray4;
+  width: 18rem;
+  border-radius: 0;
+
+  .collapse {
+    display: none;
+
+    &.show {
+      display: block;
+    }
+  }
+
+  .list-unstyled {
+    padding-left: 0;
+    list-style: none;
+    margin: 0;
+  }
+
+  .datepicker {
+    padding-bottom: 0.5rem;
+  }
+
+  .timepicker {
+    padding-top: 0.5rem;
+  }
+
+  .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: $fontai-black !important;
+    margin: 0 auto;
+
+    &:hover {
+      fill: $fontai-blue !important;
+    }
+  }
+
+  svg {
+    display: block;
+  }
+
+  .btn:hover {
+    .icon {
+      fill: $fontai-blue !important;
+    }
+  }
+
+  table {
+    width: 100%;
+    margin: 0;
+
+    td, th {
+      text-align: center;
+    }
+
+    td {
+      height: 4rem;
+      line-height: 4rem;
+      width: 4rem;
+
+      span {
+        display: inline-block;
+        width: 4rem;
+        height: 4rem;
+        line-height: 4rem;
+        cursor: pointer;
+
+        &:hover {
+          background: $fontai-blue;
+        }
+
+        &.active {
+          background-color: $fontai-blue;
+          color: $fontai-black;
+        }
+
+        &.old {
+          color: darken(#000000, 25%);
+        }
+
+        &.disabled {
+          &, &:hover {
+            background: none;
+            color: darken(#000000, 25%);
+            cursor: not-allowed;
+          }
+        }
+      }
+      
+      &.day {
+        height: 1.5rem;
+        line-height: 1.5rem;
+        width: 2rem;
+        border-top: 1px solid $fontai-light-gray3;
+      }
+
+      &.today {
+        position: relative;
+
+        &:before {
+          content: '';
+          display: inline-block;
+          border: solid transparent;
+          border-width: 0 0 7px 7px;
+          border-bottom-color: $fontai-blue;
+          border-top-color: rgba(0, 0, 0, 0.2);
+          position: absolute;
+          bottom: 4px;
+          right: 4px;
+        }
+      }
+
+      &.old, &.new {
+        color: darken(#000000, 25%);
+      }
+
+      &.cw {
+        font-size: .8em;
+        height: 20px;
+        line-height: 20px;
+        color: darken(#000000, 25%);
+      }
+
+      &.active {
+        &, &:hover {
+          background-color: $fontai-blue;
+          color: $fontai-black;
+        }
+
+        &.today:before {
+          border-bottom-color: #000000;
+        }
+      }
+
+      
+      &.disabled {
+        &, &:hover {
+          background: none;
+          color: darken(#000000, 25%);
+          cursor: not-allowed;
+        }
+      }
+
+      &.day, &.hour, &.minute, &.second {
+        &:hover {
+          background: $fontai-blue;
+          cursor: pointer;
+        }
+      }
+    }
+
+    th {
+      width: 2rem;
+
+      &.dow {
+        height: 2rem;
+        line-height: 2rem;
+        padding-top: 0.5rem;
+      }
+
+      &.picker-switch {
+        width: 12rem;
+      }
+
+      &.disabled, &.disabled:hover {
+        background: none;
+        color: darken(#000000, 25%);
+        cursor: not-allowed;
+      }
+    }
+
+    thead tr:first-child th {
+      cursor: pointer;
+      height: auto;
+
+      &:hover {
+        color: $fontai-blue;
+
+        .icon {
+          fill: $fontai-blue !important;
+        }
+      }
+    }
+  }
+
+  .datepicker-months, .datepicker-years {
+    thead th {
+      padding-bottom: 1rem;
+    }
+  }
+
+  .picker-switch {
+    text-align: center;
+
+    td {
+      padding: 0;
+      margin: 0;
+      height: auto;
+      width: auto;
+      line-height: 1.5rem;
+
+      span {
+        line-height: 2.5;
+        height: 2.5em;
+        width: 100%;
+      }
+
+      &:hover {
+        svg {
+          fill: $fontai-blue !important;
+        }
+      }
+    }
+  }
+
+  .timepicker-hour, .timepicker-minute, .timepicker-second {
+    width: 54px;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 0;
+  }
+
+  &:after {
+    content: '';
+    display: inline-block;
+    position: absolute;
+  }
+
+  &.wider {
+    width: 20rem;
+  }
+  
+  &.bottom {  
+    &:after {
+      border-left: 0.5rem solid transparent;
+      border-right: 0.5rem solid transparent;
+      border-bottom: 0.5rem solid rgba(0, 0, 0, 0.15);
+      top: -0.5rem;
+      left: 0.5rem;
+    }
+  }
+  
+  &.top { 
+    &:after {
+      border-left: 0.5rem solid transparent;
+      border-right: 0.5rem solid transparent;
+      border-top: 0.5rem solid rgba(0, 0, 0, 0.15);
+      bottom: -0.5rem;
+      left: 0.5rem;
+    }
+  }
+
+  &.float-right {
+    &:before {
+      left: auto;
+      right: 0.5rem;
+    }
+  }
+  
+  &.float-right {
+    &:after {
+      left: auto;
+      right: 0.5rem;
+    }
+  }
+
+  &.usetwentyfour {
+    td.hour {
+      height: 2rem;
+      line-height: 2rem;
+    }
+  }
+
+  &.dropdown-menu {
+    width: auto;
+  }
+}

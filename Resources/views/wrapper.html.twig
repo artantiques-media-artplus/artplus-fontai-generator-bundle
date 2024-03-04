@@ -1,0 +1,130 @@
+{% extends 'backend/base.html.twig' %}
+
+{% block body %}
+  <header class="topbar">
+    <nav class="navbar top-navbar navbar-expand-md navbar-light">
+      <div class="navbar-header">
+
+  {% block logo %}
+  {%- set pId = app.session.get('projectId') %}
+  {%- if pId %}
+
+        <a class="navbar-brand" href="{{ path('app_backend_index') }}">
+          <b>
+            <svg class="icon icon-fontai">
+              <use xlink:href="#icon-fontai"></use>
+            </svg>
+          </b>
+          <span>
+            Backend
+          </span>
+        </a>
+
+  {%- else %}
+
+        <a class="navbar-brand" href="{{ path('app_backend_index') }}">
+          <b>
+            <svg class="icon icon-fontai">
+              <use xlink:href="#icon-fontai"></use>
+            </svg>
+          </b>
+          <span>
+            Backend
+          </span>
+        </a>
+
+  {%- endif %}
+  {% endblock logo %}
+
+      </div>
+      <div class="navbar-collapse">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link nav-toggler hidden-md-up waves-effect waves-dark">
+              <svg class="icon-menu">
+                <use xlink:href="#icon-menu"></use>
+              </svg>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link sidebartoggler hidden-sm-down waves-effect waves-dark">
+              <svg class="icon-menu">
+                <use xlink:href="#icon-menu"></use>
+              </svg>
+            </a>
+          </li>
+          <li class="nav-item hidden-sm-down">
+            {{ backend_title() }}
+          </li>
+        </ul>
+        <ul class="navbar-nav my-lg-0">
+          <li class="nav-item">
+            <a class="nav-link request-help-link" href="#" title="{% trans %}Požádejte o pomoc{% endtrans %}" data-target="{{ path('app_backend_help') }}" target="_blank">
+              <svg class="icon icon-request-help">
+                <use xlink:href="#icon-request-help"></use>
+              </svg>
+            </a>
+          </li>
+
+  {%- if app.session.has('culture') %}
+            {% set currentCulture = app.session.get('culture') %}
+            <li class="nav-item dropdown language-switch">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown">
+                {{ currentCulture|replace({'en': 'gb', 'cs': "cz"}) }}
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <div class="fontai-user-dropdown">
+                  {%- for language in text_languages() %}
+                    <div class="fontai-user-dropdown-item">
+                      <a href="{{ app.request.getPathInfo }}?culture={{ language.getCode }}"
+                         {% if currentCulture == language.getCode %} class="selected"{% endif %}
+                        ><strong><span>{{ language.getCode|replace({'en': 'gb', 'cs': "cz"})|upper }}</span> ({{ language.getLinkTitle }})</strong></a>
+                    </div>
+                  {%- endfor %}
+                </div>
+              </div>
+            </li>
+
+  {%- endif %}
+
+            {% block dropdown %}{% endblock %}
+
+  {%- if app.user.countProjects > 1 %}
+
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown">
+                {{ app.session.get('projectName') }}
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <div class="fontai-user-dropdown">
+                  {%- for project in app.user.getAdminProjects() %}
+                    <div class="fontai-user-dropdown-item">
+                      <a href="{{ path('backend_access_control_default_changeProject', { projectId: project.getProject.getId }) }}"
+                         {% if app.session.get('projectId') == project.getProject.getId %} class="selected"{% endif %}
+                        ><strong>{{ project.getProject.getName }}</strong></a>
+                    </div>
+                  {%- endfor %}
+                </div>
+              </div>
+            </li>
+
+  {%- endif %}
+
+          {{ backend_admin_box() }}
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <aside class="left-sidebar">
+    {{ backend_menu() }}
+  </aside>
+
+  <div class="page-wrapper">
+    <div class="container-fluid">
+    {% block content %}{% endblock %}
+    </div>
+    {% include 'backend/_footer.html.twig' %}
+  </div>
+
+{% endblock body %}

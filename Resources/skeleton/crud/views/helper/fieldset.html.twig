@@ -1,0 +1,96 @@
+{%- set columnIds = [] %}
+{%- for id, column in groupColumns %}
+    {%- if id matches '/^\\d+$/' %}
+        {%- set columnId = column|trim('_') %}
+        {%- set columnIdTranslated = columnId ~ (columnCfg.type|default(false) == 'File' ? "_file" : "") %}
+        {%- set columnIds = columnIds|merge([columnIdTranslated]) %}
+    {%- endif %}
+{%- endfor %}
+
+{{ "{%- if at_least_one_offset_exists(edit_form, " ~ columnIds|json_encode ~ ") %}" }}
+
+<fieldset>
+    <div class="form-row">
+    {%- for id, column in groupColumns %}
+        {%- if id matches '/^\\d+$/' %}
+            {%- set columnId = column|trim('_') %}
+            {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+            {%- set columnCfg = controller_config.edit.fields[columnId] %}
+            {%- set columnIdTranslated = columnId ~ (columnCfg.type|default(false) == 'File' ? "_file" : "") %}
+            
+            {%- set dataDynamic = [] %}
+            {%- if columnCfg.dynamic|default(false) %}
+                {%- for name in columnCfg.dynamic %}
+                    {%- set dataDynamic = dataDynamic|merge(["(edit_form.offsetExists('" ~ name ~ "') ? '#' ~ edit_form." ~ name ~ ".vars.id : null)"]) %}
+                {%- endfor %}
+            {%- endif %}
+
+
+            {{ "{%- if edit_form.offsetExists('" ~ columnIdTranslated ~ "') %}" }}
+                {% if columnCfg.separated|default(false) %}<div class="w-100"></div>{% endif %}
+        <div class="form-group{%- if columnCfg.field_size is defined %} {{ columnCfg.field_size }}{% else %} {{ config.edit.field_size }}{% endif %}">
+            {{ "{{ form_label(edit_form." ~ columnIdTranslated ~ ") }}" }}
+
+            {%- if columnMap and columnCfg.preview|default(false) %}
+
+                {{ "{%- set img = " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ " %}" }}
+                {{ "{%- if img %}" }}
+
+                {%- if columnCfg.preview.route|default(null) %}
+
+                  {{ "{%- set path = path('" ~ columnCfg.preview.route ~ "', { id: " ~ entity_underscored ~ ".getId, culture: app.session.get('culture') }) %}" }}
+
+                <a href="{{ "{{ path }}" }}" class="popup" data-fancybox="{{ entity_underscored }}_{{ columnIdTranslated }}">
+                  <img src="{{ "{{ path }}" }}" class="filePreview" alt="{{ "{% trans %}" }}{{ columnCfg.name }}{{ "{% endtrans %}" }}">
+                </a>
+
+                {%- else %}
+
+                  {{ "{%- set isSvg = img[-4:4] == '.svg' %}" }}
+                  {{ "{%- set path = '/uploads/" ~ columnCfg.upload_dir|default('image/' ~ entity_underscored) ~ "/' ~ img %}" }}
+
+                <a href="{{ "{{ path }}" }}" class="popup" data-fancybox="{{ entity_underscored }}_{{ columnIdTranslated }}">
+                    <img src="{{ "{% if isSvg %}" }}{{ "{{ path }}" }}{{ "{% else %}" }}{{ "{{ path|imagine_filter('backend_preview') }}" }}{{ "{% endif %}" }}" class="filePreview" alt="{{ "{% trans %}" }}{{ columnCfg.name }}{{ "{% endtrans %}" }}">
+                </a>
+
+                {%- endif %}
+
+                {{ "{%- endif %}" }}
+
+            {%- endif %}
+
+            <div class="input-group mb-3">
+                {{ "{{ form_widget(edit_form." ~ columnIdTranslated ~ (dataDynamic|length ? ", { attr: { 'data-dynamic': [" ~ dataDynamic|join(', ') ~ "]|filter(v => v is not null)|join(',') } }" : "") ~ ") }}" }}
+                
+                {%- if columnCfg.units is defined %}
+                
+                <div class="input-group-append">
+                    <span class="input-group-text">{{ "{% trans %}" }}{{ columnCfg.units }}{{ "{% endtrans %}" }}</span>
+                </div>
+                
+                {%- endif %}
+                
+            </div>
+
+            {%- if columnMap and columnCfg.type|default(false) == 'File' and not columnCfg.preview|default(false) %}
+
+                {{ "{%- set file = " ~ entity_underscored ~ ".get" ~ columnMap.getPhpName ~ "File %}" }}
+                {{ "{%- if file %}" }}
+                    <small class="form-text text-muted">
+                        {{ "{% trans %}" }}Nahráno{{ "{% endtrans %}" }}: {% if columnCfg.download_route|default(false) %}<a href="{{ "{{ path('" ~ columnCfg.download_route ~ "', { id: " ~ entity_underscored ~ ".getId }) }}" }}">{% endif %}{{ "{{ file.getMimeType }}" }}, {{ "{{ file.getSize|format_bytes }}" }}{% if columnCfg.download_route|default(false) %}</a>{% endif %}
+                    </small>
+                {{ "{%- endif %}" }}
+
+            {%- endif %}
+
+            {%- if columnCfg.help is defined %}
+                <small class="form-text text-muted">{{ "{% trans %}" }}{{ columnCfg.help }}{{ "{% endtrans %}" }}</small>
+            {%- endif %}
+        </div>
+            {{ "{%- endif %}" }}
+        {%- endif %}
+    {%- endfor %}
+    </div>
+</fieldset>
+
+{{ "{%- endif %}" }}

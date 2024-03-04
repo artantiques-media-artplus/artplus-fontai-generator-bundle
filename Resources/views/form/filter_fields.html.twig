@@ -1,0 +1,113 @@
+{% extends 'bootstrap_4_layout.html.twig' %}
+
+{%- block form_start -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' filters')|trim}) -%}
+  {{- parent() -}}
+{%- endblock form_start -%}
+
+{%- block form_widget_compound -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' form-row')|trim}) -%}
+  {{- parent() -}}
+{%- endblock form_widget_compound -%}
+
+{%- block form_row -%}
+  <div class="form-group col-md-3">
+    {{- form_label(form) -}}
+    <div class="input-group mb-3">
+      {{- form_widget(form) -}}
+      {{- form_errors(form) -}}
+    </div>
+  </div>
+{%- endblock form_row -%}
+
+{% block form_label -%}
+  {% if label is not same as(false) -%}
+    {%- set label_attr = label_attr|merge({for: id}) -%}
+    {% if required -%}
+        {% set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' required')|trim}) %}
+    {%- endif -%}
+    {% if label is empty -%}
+      {%- if label_format is not empty -%}
+        {% set label = label_format|replace({
+          '%name%': name,
+          '%id%': id,
+        }) %}
+      {%- else -%}
+        {% set label = name|humanize %}
+      {%- endif -%}
+    {%- endif -%}
+    <label{% if label_attr %}{% with { attr: label_attr } %}{{ block('attributes') }}{% endwith %}{% endif %}>{{ translation_domain is same as(false) ? label : label|trans({}, translation_domain) }}</label>
+  {%- endif -%}
+{%- endblock form_label %}
+
+{%- block choice_widget_collapsed -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' chosen')|trim, 'data-placeholder': 'Vyberte'|trans, 'data-no_results_text': 'Nenalezeno'|trans}) -%}
+  {{ parent() }}
+{%- endblock choice_widget_collapsed -%}
+
+{%- block datetimerange_row -%}
+  <div class="form-group col-md-3">
+    {{- form_label(form) -}}
+    {{- form_widget(form) -}}
+    {{- form_errors(form) -}}
+  </div>
+{%- endblock datetimerange_row -%}
+
+{%- block daterange_row -%}
+  {{- block('datetimerange_row') -}}
+{%- endblock daterange_row -%}
+
+{%- block numberrange_row -%}
+  {{- block('datetimerange_row') -}}
+{%- endblock numberrange_row -%}
+
+{%- block datetimerange_widget -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' form-row mb-3')|trim}) -%}
+  <div {{ block('widget_container_attributes') }}>
+    {%- if form is rootform -%}
+        {{ form_errors(form) }}
+    {%- endif -%}
+    <div class="col-sm-6">
+      {{- form_widget(form.from) -}}
+    </div>
+    <div class="col-sm-6">
+      {{- form_widget(form.to) -}}
+    </div>
+    {{- form_rest(form) -}}
+  </div>
+{%- endblock datetimerange_widget -%}
+
+{%- block daterange_widget -%}
+  {{- block('datetimerange_widget') -}}
+{%- endblock daterange_widget -%}
+
+{%- block numberrange_widget -%}
+  {{- block('datetimerange_widget') -}}
+{%- endblock numberrange_widget -%}
+
+{%- block model_autocomplete_widget -%}
+  {%- set attr = attr|merge({class: (attr.class|default('') ~ ' chosen')|trim, 'data-autocomplete-url': path(autocomplete_route, { type: 'filter', output: 'id' }), 'data-autocomplete-name': name, 'data-autocomplete-length': autocomplete_length|default(3)}) -%}
+  {{- block('choice_widget') -}}
+{%- endblock model_autocomplete_widget -%}
+
+{%- block text_autocomplete_widget -%}
+  {%- if not disabled %}
+    {%- set attr = attr|merge({ style: 'display: none;' }) -%}
+  {%- endif %}
+  {{- block('form_widget_simple') -}}
+  {%- if not disabled %}
+  <select id="{{ id }}_chosen" class="chosen" data-autocomplete-url="{{ path(autocomplete_route, { type: 'filter', output: name }) }}" data-autocomplete-name="{{ name }}" data-autocomplete-length="{{ autocomplete_length|default(3) }}" data-autocomplete-tags data-placeholder="{% trans %}Vyberte{% endtrans %}" data-no_results_text="{% trans %}Nenalezeno{% endtrans %}" onchange="$('#{{ id }}').val(this.value).trigger('change');">
+    <option value="{{ value }}">{{ value }}</option>
+  </select>
+  {%- endif %}
+{%- endblock text_autocomplete_widget -%}
+
+{%- block custom_widget -%}
+  {% include template with { type: 'filter' } %}
+{%- endblock custom_widget -%}
+
+{%- block form_errors -%}
+  {%- for error in errors -%}
+  <div class="invalid-feedback">{{ error.message }}</div>
+  {%- endfor -%}
+{%- endblock form_errors %}

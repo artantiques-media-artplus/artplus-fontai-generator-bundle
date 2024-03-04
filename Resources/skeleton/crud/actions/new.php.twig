@@ -1,0 +1,21 @@
+
+  /**
+{% block phpdoc_method_header %}
+   * Creates a new {{ entity_singularized }} entity.
+{% endblock phpdoc_method_header %}
+   *
+{% block phpdoc_method_annotations %}
+{% endblock phpdoc_method_annotations %}
+   */
+{% block method_definition %}
+  public function newAction(Request $request)
+{% endblock method_definition %}
+  {
+{% block method_body %}
+    ${{ entity_singularized }} = new {{ entity }}();
+{% endblock method_body %}
+
+{% block method_return %}
+    return $this->handleEdit($request, ${{ entity_singularized }});
+{% endblock method_return %}
+  }

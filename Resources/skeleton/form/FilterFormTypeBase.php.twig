@@ -1,0 +1,224 @@
+<?php
+namespace App\Form\FontaiGenerator\Filter\Base;
+
+{% block use_statements %}
+use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type as SymfonyType;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Fontai\Bundle\GeneratorBundle\Form\Type as FontaiType;
+
+{% endblock use_statements %}
+
+{% block class_definition %}
+class {{ form_class }} extends AbstractType
+{% endblock class_definition %}
+{
+{% block class_body %}
+{% if controller_config.list.filters|default(false)|length %}
+  /**
+   * {@inheritdoc}
+   */
+  public function buildForm(FormBuilderInterface $builder, array $options)
+  {
+    $data = $builder->getData();
+
+  {%- for column in controller_config.list.filters %}
+    {%- set columnId = column|trim('_') %}
+    {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+    {%- set columnCfg = controller_config.list.fields[columnId] %}
+
+    {%- set choices = columnCfg.choices|default(null) %}
+
+    {%- if columnMap and columnMap.getType == 'BOOLEAN' and columnCfg.choices is not defined %}
+      {%- set choices = { '': columnCfg.include_custom|default('ano nebo ne'), '0': 'ne', '1': 'ano' } %}
+    {%- endif %}
+
+    {%- set type = 'SymfonyType\\TextType::class' %}
+    
+    {%- if column[:1] == '_' %}
+      {%- set type = 'FontaiType\\CustomType::class' %}
+    {%- elseif choices is not null %}
+      {%- set type = 'SymfonyType\\ChoiceType::class' %}
+    {%- elseif columnCfg.target_class is defined or (columnMap and columnMap.isForeignKey) %}
+      {%- set type = columnCfg.autocomplete|default(false) ? 'FontaiType\\ModelAutocompleteType::class' : 'FontaiType\\ModelType::class' %}
+    {%- elseif columnCfg.type|default(null) in ['Integer', 'Number', 'DateTime', 'Date', 'Time'] %}
+      {%- set type = 'SymfonyType\\' ~ columnCfg.type ~ 'Type::class' %}
+    {%- elseif columnMap %}
+      {%- set typeMap = {
+        'SymfonyType\\Integer':      ['TINYINT', 'SMALLINT', 'INTEGER', 'BIGINT', 'NUMERIC'],
+        'SymfonyType\\Number':       ['FLOAT', 'REAL', 'DOUBLE', 'DECIMAL'],
+        'FontaiType\\DateTimeRange': ['TIMESTAMP'],
+        'FontaiType\\DateRange':     ['DATE'],
+        'SymfonyType\\TimeRange':    ['TIME'],
+        'SymfonyType\\Choice':       ['ENUM']
+      } %}
+      {%- for dst, src in typeMap %}
+        {%- if columnMap.getType in src %}
+          {%- set type = dst ~ 'Type::class' %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if type in ['SymfonyType\\IntegerType::class', 'SymfonyType\\NumberType::class', 'SymfonyType\\DateTimeType::class', 'SymfonyType\\DateType::class', 'SymfonyType\\TimeType::class'] and columnCfg.filter_range|default(false) %}
+      {%- set type = type|replace({ 'Symfony': 'Fontai', 'Type::class': 'RangeType::class' }) %}
+    {%- elseif type == 'SymfonyType\\TextType::class' and columnCfg.autocomplete|default(false) %}
+      {%- set type = 'FontaiType\\TextAutocompleteType::class' %}
+    {%- endif %}
+
+    {%- set condition = [] %}
+
+    {%- if columnCfg.credentials is defined %}
+      {%- set condition = condition|merge(["$options['user']->hasCredential(" ~ columnCfg.credentials|json_encode ~ ")"]) %}
+    {%- endif %}
+
+    {%- if columnCfg.filter_condition is defined %}
+      {%- set condition = condition|merge([columnCfg.filter_condition]) %}
+    {%- endif %}
+
+    {%- if condition|length %}
+
+    if (({{ condition|join(') && (') }}))
+
+    {%- endif %}
+
+    $builder->add('{{ columnId }}', {{ type }}, [
+      'label' => '{{ columnCfg.name|default(columnId|capitalize) }}',
+      'required' => FALSE,
+
+    {%- if columnMap and columnMap.isTemporal and columnMap.getType != 'DATE' and column[:1] != '_' %}
+
+      'view_timezone' => $options['view_timezone'],
+
+    {%- endif %}
+
+    {%- if type == 'FontaiType\\TextAutocompleteType::class' and columnCfg.autocomplete|default(false)%}
+
+      'autocomplete_route' => '{{ route_name_prefix }}_autocomplete',
+
+      {%- if columnCfg.autocomplete.length|default(false) %}
+
+      'autocomplete_length' => {{ columnCfg.autocomplete.length }},
+        
+      {%- endif %}
+    {%- endif %}
+
+    {%- if ((columnMap and columnMap.isForeignKey) or columnCfg.target_class is defined) and column[:1] != '_' %}
+
+      'multiple' => TRUE,
+      'index_property' => 'id',
+      'values_as_data' => TRUE,
+
+      {%- if columnCfg.autocomplete|default(false) %}
+
+      'autocomplete_route' => '{{ route_name_prefix }}_autocomplete',
+
+        {%- if columnCfg.autocomplete.length|default(false) %}
+
+      'autocomplete_length' => {{ columnCfg.autocomplete.length }},
+        
+        {%- endif %}
+      {%- endif %}
+
+      {%- if columnCfg.text_method is defined %}
+
+      'choice_label' => function($choice) { return is_object($choice) ? $choice->{{ columnCfg.text_method }}() : ''; },
+
+      {%- endif %}
+
+      {%- if columnCfg.exclude_choices is defined %}
+
+      'exclude_choices' => {{ columnCfg.exclude_choices }},
+
+      {%- endif %}
+
+    {%- endif %}
+
+    {%- if columnCfg.placeholder|default(false) %}
+
+      'placeholder' => {{ columnCfg.placeholder is same as(true) ? "''" : columnCfg.placeholder }},
+
+    {%- endif %}
+
+    {%- if column[:1] == '_' %}
+
+      'template' => 'fontai_generator/{{ entity_underscored }}/include/{{ columnId }}.html.twig',
+
+    {%- endif %}
+
+      'attr' => [
+
+    {%- for param, value in columnCfg.attr|default({}) %}
+
+        '{{ param }}' => '{{ value|replace({"'": "\\'"}) }}',
+
+    {%- endfor %}
+
+      ],
+
+    {%- if choices is not null %}
+      {%- if not (columnMap and columnMap.getType == 'BOOLEAN') and (columnCfg.multiple ?? true) %}
+      
+      'multiple' => TRUE,
+
+      {%- endif %}
+
+      'choices' => [
+      {%- for key, val in choices -%}
+        '{{ val }}' => '{{ key }}',
+      {%- endfor %}],
+
+    {%- elseif columnCfg.target_class is defined %}
+      {%- set relatedTable = table_map.getDatabaseMap.getTableByPhpName(entity_namespace ~ '\\' ~ columnCfg.target_class) %}
+
+      'class' => {{ relatedTable.getClassName }}::class,
+      'index_property' => 'id',
+
+      {%- if columnCfg.expanded|default(false) %}
+
+      'expanded' => TRUE,
+
+      {%- endif %}
+
+      'query' => $options['related_query']['{{ columnId }}'] ?? {{ relatedTable.getClassName }}Query::create()
+
+      {%- if relatedTable.getBehaviors['i18n'] is defined %}
+      ->joinWithI18n($options['culture'])
+      {%- endif %},
+
+    {%- elseif columnMap and columnMap.isForeignKey and column[:1] != '_' %}
+
+      'class' => {{ columnMap.getRelatedTable.getClassName }}::class,
+      'query' => $options['related_query']['{{ columnId }}'] ?? {{ columnMap.getRelatedTable.getClassName }}Query::create()
+
+      {%- if columnMap.getRelation.getForeignTable.getBehaviors['i18n'] is defined -%}
+      ->joinWithI18n($options['culture'])
+      {%- endif -%},
+
+    {%- endif %}
+    
+    ]);
+
+  {%- endfor %}
+  }
+{% endif %}
+
+  /**
+   * {@inheritdoc}
+   */
+  public function configureOptions(OptionsResolver $resolver)
+  {
+    $resolver->setDefaults([
+      'view_timezone' => NULL,
+      'related_query' => []
+    ]);
+
+    $resolver->setRequired([
+      'culture',
+      'request',
+      'settings',
+      'user'
+    ]);
+  }
+{% endblock class_body %}
+}

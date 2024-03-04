@@ -1,0 +1,82 @@
+{%- for column in controller_config.list.display %}
+  {%- set columnId = column|trim('_') %}
+  {%- set columnMap = table_map.hasColumn(columnId) ? table_map.getColumn(columnId) : (table_map_i18n and table_map_i18n.hasColumn(columnId) ? table_map_i18n.getColumn(columnId) : null) %}
+  {%- set columnCfg = controller_config.list.fields[columnId] %}
+  {%- set className = [ 'col-' ~ columnId ] %}
+  {%- set useLink = columnCfg.use_link|default(false) %}
+  {%- set units =  columnCfg.units|default(false) %}
+
+  {%- if columnCfg.align is defined %}
+    {%- set className = className|merge(['align-' ~ columnCfg.align]) %}
+  {%- endif %}
+
+  {%- if columnMap and columnMap.getType in ['VARCHAR', 'LONGVARCHAR', 'BLOB', 'CLOB'] %}
+    {%- set className = className|merge(['wrap']) %}
+  {%- endif %}
+
+{{ "{% if dataCredentials['" ~ columnId ~ "']|default(false) %}" }}
+
+  {%- if columnCfg.condition is defined %}
+
+  {{ "{% if " ~ columnCfg.condition ~ " %}" }}
+
+  {%- endif %}
+
+<td{% if className|length %} class="{{ className|join(' ') }}"{% endif %} role="row">
+    {{ "{% set value -%}" }}
+{% include 'crud/views/helper/plainField.html.twig' %}
+    {{ "{%- endset %}" }}
+
+  {%- if columnCfg.nonempty is defined %}
+
+    {{ "{% if value %}" }} 
+
+  {%- endif %}
+
+  {%- if useLink %}
+
+  <a href="{{ "{{ path('" ~ route_name_prefix ~ "_" ~ config.list.click_action|default('edit') ~ "', { id: " ~ entity_underscored ~ ".getId, culture: app.session.get('culture') }) }}" }}">
+
+    {%- endif %}
+
+      {{ "{% if value %}" }}
+    
+  {%- if columnCfg.bold|default(false) %}
+
+  <strong>
+
+  {%- endif %}
+
+      {{ "{{ value }}" }}{% if units %}&nbsp;{{ "{% trans %}" }}{{ units }}{{ "{% endtrans %}" }}{% endif %}
+
+  {%- if columnCfg.bold|default(false) %}
+
+  </strong>
+
+  {%- endif %}
+      
+      {{ "{% endif %}" }}
+
+  {%- if useLink %}
+
+  </a>
+
+  {%- endif %}
+
+  {%- if columnCfg.nonempty is defined %}
+
+      {{ "{% endif %}" }}
+
+  {%- endif %}
+
+</td>
+
+  {%- if columnCfg.condition is defined %}
+
+  {{ "{% endif %}" }}
+
+  {%- endif %}
+
+{{ "{% endif %}" }}
+
+{%- endfor %}

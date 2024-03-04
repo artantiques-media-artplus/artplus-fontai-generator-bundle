@@ -1,0 +1,80 @@
+{% block extends %}
+{{ "{% extends app.request.attributes.get('is_master_request') ? '@FontaiGenerator/wrapper.html.twig' : '@FontaiGenerator/standalone.html.twig' %}" }}
+{% endblock extends %}
+
+{% block title %}
+{{ "{% block title %}{{ title|trans }} | {{ parent() }}{% endblock %}" }}
+{% endblock %}
+
+{% block content %}
+    {{ "{% block content %}" }}
+    {{ "{%- if app.request.attributes.get('is_master_request') %}" }}
+        {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/messages.html.twig' %}" }}
+    {{ "{%- endif %}" }}
+
+    <div class="{{ "{% if app.request.attributes.get('is_master_request') %}" }}card {{ "{% endif %}" }}listAjax" id="{{ entity_underscored }}_list">
+
+    {{ "{%- if app.request.attributes.get('is_master_request') %}" }}
+    
+        <div class="card-header small text-uppercase">
+            <a data-toggle="collapse" href="#collapse-">
+                <svg class="icon icon-caret-up">
+                    <use xlink:href="#icon-caret-up"></use>
+                </svg>
+                {{ "{% trans %}" }}{{ controller_config.list.title|default('Nezadáno') }}{{ "{% endtrans %}" }}
+            </a>
+
+        </div>
+        <div class="d-flex actions-wrap">
+            <div class="d-flex actions">
+
+    {%- if controller_config.list.filters|default([]|length) %}
+
+                <a class="btn text-uppercase with-caret" data-toggle="collapse" role="button" href="#collapse-{{ entity_underscored }}-filters" aria-expanded="{% if not (controller_config.list.filters_collapsed ?? false) %}{{ "{{ filters|default([]) is not empty ? 'true' : 'false' }}" }}{% else %}false{% endif %}">
+                    <svg class="icon icon-caret-down"><use xlink:href="#icon-caret-down"></use></svg>
+                    <svg class="icon icon-filter"><use xlink:href="#icon-filter"></use></svg>
+                    <span>{{ "{% trans %}" }}Filtry{{ "{% endtrans %}" }}</span>
+
+    {{ "{%- if filters|default([]) is not empty %}" }}
+
+                    <svg class="icon icon-filter-applied"><use xlink:href="#icon-filter-applied"></use></svg>
+
+    {{ "{%- endif %}" }}
+
+                </a>
+
+    {%- endif %}
+
+    {%- if controller_config.list.actions|default([])|length %}
+
+                {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/actions.html.twig' %}" }}
+
+    {%- endif %}
+    
+            </div>
+            {% include 'crud/views/helper/perPage.html.twig' %}
+        </div>
+
+    {%- if controller_config.list.filters|default([]|length) %}
+
+        <div class="filters-content collapse{% if not (controller_config.list.filters_collapsed ?? false) %}{{ "{%- if filters|default([]) is not empty %}" }} show{{ "{%- endif %}" }}{% endif %}" id="collapse-{{ entity_underscored }}-filters">
+            <div class="row">
+                <div class="col">
+                    {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/filters.html.twig' %}" }}
+                </div>
+            </div>
+        </div>
+
+    {%- endif %}
+
+    {{ "{% endif %}" }}
+
+        <div class="listAjaxWrap">
+            <div class="listAjaxContent dataTables_wrapper">
+                {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/index/list.html.twig' %}" }}
+            </div>
+        </div>
+    
+    </div>
+    {{ "{% endblock content %}" }}
+{% endblock content %}

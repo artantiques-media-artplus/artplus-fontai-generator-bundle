@@ -1,0 +1,122 @@
+{{ "{%- form_theme edit_form '@FontaiGenerator/form/fields.html.twig' %}" }}
+{%- set useTabs = false %}
+
+{%- if controller_config.edit is defined and controller_config.edit.display is defined %}
+    {%- for groupName, groupColumns in controller_config.edit.display %}
+        {%- if groupColumns|first is iterable %}
+            {%- set useTabs = true %}
+        {%- endif %}
+    {%- endfor %}
+{%- endif %}
+
+{{ "{% if app.request.attributes.get('is_master_request') %}" }}
+<div class="card">
+    {{ "{% if navigation is defined %}" }}
+    <div class="fontai-tabs">
+        <ul class="nav nav-tabs" role="tablist">
+            {{ "{% else %}" }}
+            <ul class="nav nav-tabs fontai-tabs" role="tablist">
+                {{ "{% endif %}" }}
+                {%- if useTabs %}
+                    {%- set first = true %}
+                    {%- for tabName, tab in controller_config.edit.display %}
+                        <li class="nav-item">
+                            <a href="#tab_{{ tabName }}" data-toggle="tab" role="tab" class="nav-link {% if first %} active{% endif %}">
+
+                                {%- if tab.params.icon is defined and tab.params.icon|length > 0 %}
+
+                                    <span class="nav-item-icon"><svg class="icon icon-{{ tab.params.icon }}"><use xlink:href="#icon-{{ tab.params.icon }}"></use></svg></span>
+
+                                {%- endif %}
+
+                                <span>{{ tab.params.title|default(tabName) }}</span>
+                            </a>
+                        </li>
+                        {%- set first = false %}
+                    {%- endfor %}
+                {%- else %}
+                    <li class="nav-item">
+                        <a data-toggle="tab" role="tab" class="nav-link active">
+                            <span class="nav-item-icon"><svg class="icon icon-edit"><use xlink:href="#icon-edit"></use></svg></span>
+                            <span>
+                            {{ "{% if " ~ entity_underscored ~ ".isNew %}" }}
+                                {{ "{% trans %}" }}Nový záznam{{ "{% endtrans %}" }}
+                                {{ "{% else %}" }}
+                                {{ "{% trans %}" }}Editace{{ "{% endtrans %}" }}
+                                {{ "{% endif %}" }}
+                        </span>
+                        </a>
+                    </li>
+                {%- endif %}
+            </ul>
+            {{ "{% if navigation is defined %}" }}
+            <div class="fontai-tabs-nav">
+                <ul class="nav nav-tabs">
+                    {{ "{% if navigation is defined and navigation.prev is defined and navigation.prev > 0 %}" }}
+                    <li class="nav-item nav-item-prev">
+                        <a href="{{ "{{ url('" ~ route_name_prefix ~ "_edit', { id: navigation.prev, culture: app.session.get('culture') } ) }}" }}" class="nav-link">
+                            <span class="nav-item-icon"><svg class="icon icon-arrow-left"><use xlink:href="#icon-arrow-left"></use></svg></span>
+                        </a>
+                    </li>
+                    {{ "{% endif %}" }}
+                    {{ "{% if navigation is defined and navigation.next is defined and navigation.next > 0 %}" }}
+                    <li class="nav-item nav-item-next">
+                        <a href="{{ "{{ url('" ~ route_name_prefix ~ "_edit', { id: navigation.next, culture: app.session.get('culture') } ) }}" }}" class="nav-link">
+                            <span class="nav-item-icon"><svg class="icon icon-arrow-right"><use xlink:href="#icon-arrow-right"></use></svg></span>
+                        </a>
+                    </li>
+                    {{ "{% endif %}" }}
+                </ul>
+            </div></div>
+    {{ "{% endif %}" }}
+{{ "{% else %}" }}
+<div class="collapse" id="collapse-{{ entity_underscored }}-edit" data-parent="#included-{{ entity_class }}">
+{{ "{% endif %}" }}
+
+    <div class="card-body">
+        {{ "{{ form_start(edit_form, {attr: {class: 'form-horizontal ajaxForm ' ~ (" ~ entity_underscored ~ " is not defined or " ~ entity_underscored ~ ".isNew ? 'create' : 'edit'), id: '" ~ entity_underscored ~ "_form'}}) }}" }}
+            {{ "{{ form_widget(edit_form._token) }}" }}
+            <div class="tab-content">
+
+{%- if controller_config.edit is defined and controller_config.edit.display is defined %}
+
+    {%- if useTabs == false %}
+
+                <div class="tab-pane active" role="tabpanel">
+
+    {%- endif %}
+
+    {%- set first = true %}
+    {%- for groupName, groupColumns in controller_config.edit.display %}
+        {%- if useTabs %}
+            {%- set tab = groupColumns %}
+
+                <div class="tab-pane{% if first %} active{% endif %}" id="tab_{{ groupName }}" role="tabpanel">
+
+            {%- for groupName, groupColumns in tab %}
+                {%- block columns %}
+                    {% include 'crud/views/helper/fieldset.html.twig' %}
+                {%- endblock columns %}
+            {%- endfor %}
+
+                </div>
+
+            {%- set first = false %}
+        {%- else %}
+            {{ block('columns') }}
+        {%- endif %}
+    {%- endfor %}
+
+    {%- if useTabs == false %}
+
+                </div>
+
+    {%- endif %}
+
+{%- endif %}
+
+            </div>
+            {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/edit/actions.html.twig' %}" }}
+        {{ "{{ form_end(edit_form, {render_rest: false}) }}" }}
+    </div>
+</div>

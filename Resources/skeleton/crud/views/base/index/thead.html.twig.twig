@@ -1,0 +1,46 @@
+{%- for column in controller_config.list.display %}
+    {%- set columnId = column|trim('_') %}
+    {%- set columnCfg = controller_config.list.fields[columnId] %}
+    {%- set className = [ 'col-' ~ columnId ] %}
+
+    {%- if columnCfg.align is defined %}
+        {%- set className = className|merge(['align-' ~ columnCfg.align]) %}
+    {%- endif %}
+
+    {{ "{%- if dataCredentials['" ~ columnId ~ "']|default(false) %}" }}
+
+    {%- if columnCfg.condition is defined %}
+
+        {{ "{%- if " ~ columnCfg.condition ~ " %}" }}
+
+    {%- endif %}
+
+    <th{% if className|length %} class="{{ className|join(' ') }}"{% endif %}{% if columnCfg.col_width is defined %} style="min-width: {{ columnCfg.col_width }}px;"{% endif %}>
+
+        {%- if columnCfg.sortable|default(true) %}
+            {{ "{% if app.session.get('" ~ entity_underscored ~ "/sort/field') == '" ~ columnId ~ "' %}" }}
+                <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { sort: '" ~ columnId ~ "', type: app.session.get('" ~ entity_underscored ~ "/sort/type', 'asc') == 'asc' ? 'desc' : 'asc', culture: app.session.get('culture') }) }}" }}#{{ entity_underscored }}_list">
+                    {{ "{% trans %}" }}{{ columnCfg.name|default(columnId|capitalize) }}{{ "{% endtrans %}" }}
+                    <svg class="icon small gray icon-{{ "{{ app.session.get('" ~ entity_underscored ~ "/sort/type', 'asc') }}" }}">
+                        <use xlink:href="#icon-{{ "{{ app.session.get('" ~ entity_underscored ~ "/sort/type', 'asc') }}" }}"></use>
+                    </svg>
+                </a>
+            {{ "{% else %}" }}
+                <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { sort: '" ~ columnId ~ "', type: 'asc', culture: app.session.get('culture') }) }}" }}#{{ entity_underscored }}_list">
+                    {{ "{% trans %}" }}{{ columnCfg.name|default(columnId|capitalize) }}{{ "{% endtrans %}" }}
+                </a>
+            {{ "{% endif %}" }}
+        {%- else %}
+            {{ "{% trans %}" }}{{ columnCfg.name|default(columnId|capitalize) }}{{ "{% endtrans %}" }}
+        {%- endif %}
+    </th>
+
+    {%- if columnCfg.condition is defined %}
+
+        {{ "{%- endif %}" }}
+
+    {%- endif %}
+
+    {{ "{%- endif %}" }}
+
+{%- endfor %}

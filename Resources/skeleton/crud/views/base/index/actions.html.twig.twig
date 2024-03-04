@@ -1,0 +1,43 @@
+{%- if controller_config.list.actions|default(false)|length %}
+  {%- for id, params in controller_config.list.actions %}
+    {%- if params is not iterable %}
+      {%- set params = {} %}
+    {%- endif %}
+
+    {%- set name = params.name is iterable ? params.name : [params.name] %}    
+    {%- set icon = params.icon|default(id) %}
+
+    {%- if params.credentials is defined %}
+      {%- set creds = params.credentials %}
+    {%- else %}
+      {%- set creds = ['FontaiGenerator\\' ~ entity_class ~ '-' ~ id] %}
+      {%- if controller_config.included_in is defined %}
+        {%- for curIncludedIn in controller_config.included_in %}
+          {%- set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+        {%- endfor %}
+      {%- endif %}
+    {%- endif %}
+
+{{ "{% if app.user.hasCredential(" ~ creds|json_encode ~ ") %}" }}
+
+    {%- if params.condition is defined %}
+
+  {{ "{% if " ~ params.condition ~ " %}" }}
+
+    {%- endif %}
+  
+<a class="btn action_{{ id }} text-uppercase" href="{{ "{{ path('" ~ route_name_prefix ~ "_" ~ id ~ "', { culture: app.session.get('culture') }) }}" }}">
+  <svg class="icon icon-{{ icon }}"><use xlink:href="#icon-{{ icon }}"></use></svg>
+  <span>{{ "{% trans %}" }}{{ name|join('{% endtrans %}&nbsp;{% trans %}') }}{{ "{% endtrans %}" }}</span>
+</a>
+
+    {%- if params.condition is defined %}
+
+  {{ "{% endif %}" }}
+
+    {%- endif %}
+
+{{ "{% endif %}" }}
+
+  {%- endfor %}
+{%- endif %}

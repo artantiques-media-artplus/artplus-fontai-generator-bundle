@@ -1,0 +1,39 @@
+<div class="dataTables_paginate paging_simple_numbers">
+    {{ "{% if pager.haveToPaginate %}" }}
+        {{ "{%- set query_string = {'culture': app.session.get('culture')}|merge(query_string) %}" }}
+
+        <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: pager.getFirstPage }|merge(query_string)) }}" }}" class="paginate_button first-page{{ "{% if pager.getPage == 1 %}" }} disabled{{ "{% endif %}" }}"
+           title="{{ "{% trans %}" }}První{{ "{% endtrans %}" }}"
+           class="action">
+            <svg class="icon icon-first"><use xlink:href="#icon-first"></use></svg>
+        </a>
+        <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: pager.getPreviousPage }|merge(query_string)) }}" }}" class="paginate_button previous-page{{ "{% if pager.getPage == 1 %}" }} disabled{{ "{% endif %}" }}"
+           title="{{ "{% trans %}" }}Předchozí{{ "{% endtrans %}" }}"
+           class="action">
+            <svg class="icon icon-next"><use xlink:href="#icon-next"></use></svg>
+        </a>
+
+        <span>
+            {{ "{% for page in pager.getLinks(3) %}" }}
+                <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: page }|merge(query_string)) }}" }}" class="paginate_button{{ "{% if page == pager.getPage %}" }} current{{ "{% endif %}" }}">{{ "{{ page }}" }}</a>
+                
+                {{ "{%- if pager.getCurrentMaxLink != pager.getLastPage and pager.getCurrentMaxLink == page %}" }}
+                    <span class="ellipsis">...</span>
+                    <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: pager.getLastPage }|merge(query_string)) }}" }}" class="paginate_button">{{ "{{ pager.getLastPage }}" }}</a>
+                {{ "{%- endif %}" }}
+
+            {{ "{% endfor %}" }}
+        </span>
+
+        <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: pager.getNextPage }|merge(query_string)) }}" }}" class="paginate_button next-page{{ "{% if pager.getPage == pager.getLastPage %}" }} disabled{{ "{% endif %}" }}"
+           title="{{ "{% trans %}" }}Další{{ "{% endtrans %}" }}"
+           class="action">
+            <svg class="icon icon-previous"><use xlink:href="#icon-previous"></use></svg>
+        </a>
+        <a href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: pager.getLastPage }|merge(query_string)) }}" }}" class="paginate_button last-page{{ "{% if pager.getPage == pager.getLastPage %}" }} disabled{{ "{% endif %}" }}"
+           title="{{ "{% trans %}" }}Poslední{{ "{% endtrans %}" }}"
+           class="action">
+            <svg class="icon icon-last"><use xlink:href="#icon-last"></use></svg>
+        </a>
+    {{ "{% endif %}" }}
+</div>

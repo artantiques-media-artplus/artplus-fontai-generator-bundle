@@ -1,0 +1,74 @@
+
+  /**
+{% block phpdoc_method_header %}
+   * Deletes a {{ entity_class }} entity.
+{% endblock phpdoc_method_header %}
+   *
+{% block phpdoc_method_annotations %}
+{% endblock phpdoc_method_annotations %}
+   */
+{% block method_definition %}
+  public function deleteAction(Request $request, $id)
+{% endblock method_definition %}
+  {
+{% block method_body %}
+    $query = call_user_func([$this->query, 'create']);
+    
+    if ($this->phpNameI18n)
+    {
+      $query->joinWithI18n();
+    }
+
+    if (method_exists($this, 'addCustomCriteria'))
+    {
+      $this->addCustomCriteria($query);
+    }
+    
+    if (!(${{ entity_singularized }} = $query->findOneById($id)))
+    {
+      throw $this->createNotFoundException('{{ entity_class }} object not found');
+    }
+
+{%- if controller_config.list.object_actions is defined and controller_config.list.object_actions.delete is defined and controller_config.list.object_actions.delete.condition is defined %}
+
+    if ({{ controller_config.list.object_actions.delete.condition }})
+    {
+    
+{%- endif %}
+
+      if (method_exists($this, 'beforeDelete'))
+      {
+        $this->beforeDelete(${{ entity_singularized }});
+      }
+
+      try {
+{% if controller_config.archive is defined %}
+        ${{ entity_singularized }}->setArchived()
+        ->save();
+{% else %}
+        ${{ entity_singularized }}->delete();
+{% endif %}
+      }
+      catch (PropelException $e) {
+        return $this->json([
+          'success' => FALSE
+        ]);
+      }
+
+      if (method_exists($this, 'afterDeleteSuccess'))
+      {
+        $this->afterDeleteSuccess(${{ entity_singularized }});
+      }
+
+{%- if controller_config.list.object_actions is defined and controller_config.list.object_actions.delete is defined and controller_config.list.object_actions.delete.condition is defined %}
+
+    }
+    
+{%- endif %}
+
+{% endblock method_body %}
+
+{% block method_return %}
+    return $this->redirectToRoute('{{ route_name_prefix }}_index');
+{% endblock method_return %}
+  }

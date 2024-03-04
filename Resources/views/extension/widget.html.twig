@@ -1,0 +1,22 @@
+{%- if isEnabled %}
+
+<div id="backend-widget">
+  <ul>
+
+  {%- for row in app.request.attributes.get('fontai_generator_edit_links', []) %}
+
+    <li>
+      <a href="{{ path(row[1], row[2]|default({})) }}" onclick="window.open(this.href); return false;">
+        {{ row[0]|trans }}
+      </a>
+    </li>
+
+  {%- endfor %}
+
+    <li>
+      <a href="{{ path('app_backend_index') }}">{% trans %}Přejít do backendu{% endtrans %}</a>
+    </li>
+  </ul>
+</div>
+
+{%- endif %}

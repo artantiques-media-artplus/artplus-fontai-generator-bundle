@@ -1,0 +1,117 @@
+{%- if controller_config.edit.actions|default(false)|length -%}
+
+    <div class="form-actions">
+
+        {%- for id, params in controller_config.edit.actions %}
+
+            {%- if params is not iterable %}
+                {%- set params = {} %}
+            {%- endif %}
+
+
+            {%- if id in ['save', 'delete'] and controller_config.archive is defined %}
+
+                {{ "{% if " ~ entity_underscored ~ " is not defined or not " ~ entity_underscored ~ ".getArchived %}" }}
+
+            {%- endif %}
+
+
+            {%- if params.name is defined %}
+                {%- set name = "{% trans %}" ~ params.name ~ "{% endtrans %}" %}
+            {%- else %}
+                {%- if id == 'save' %}
+                    {%- set name = "{{ (" ~ entity_underscored ~ " is not defined or " ~ entity_underscored ~ ".isNew ? 'Vložit' : 'Uložit')|trans }}" %}
+                {%- elseif id == 'save_and_list' %}
+                    {%- set name = "{{ (" ~ entity_underscored ~ " is not defined or " ~ entity_underscored ~ ".isNew ? 'Vložit a výpis' : 'Uložit a výpis')|trans }}" %}
+                {%- elseif id == 'save_and_add' %}
+                    {%- set name = "{{ (" ~ entity_underscored ~ " is not defined or " ~ entity_underscored ~ ".isNew ? 'Vložit a nový' : 'Uložit a nový')|trans }}" %}
+                {%- else %}
+                    {%- if id == 'back' %}
+                        {% set name = 'Zpět' %}
+                    {%- elseif id == 'delete' %}
+                        {% set name = controller_config.archive is defined ? 'Archivovat' : 'Smazat' %}
+                    {%- else %}
+                        {%- set name = id|capitalize %}
+                    {%- endif %}
+
+                    {%- set name = "{% trans %}" ~ name ~ "{% endtrans %}" %}
+                {%- endif %}
+            {%- endif %}
+
+            {%- set icon = params.icon|default(id) %}
+
+            {%- if id != 'back' %}
+                {%- if params.credentials is defined %}
+                    {%- set creds = params.credentials %}
+                {%- else %}
+                    {%- set creds = ['FontaiGenerator\\' ~ entity_class ~ '-' ~ id|replace({'save_and_add': 'edit', 'save_and_list': 'edit', 'save': 'edit'})] %}
+                    {%- if controller_config.included_in is defined %}
+                        {%- for curIncludedIn in controller_config.included_in %}
+                            {%- set creds = creds|merge(['FontaiGenerator\\' ~ curIncludedIn ~ '-edit']) %}
+                        {%- endfor %}
+                    {%- endif %}
+                {%- endif %}
+
+                {{ "{% if app.user.hasCredential(" ~ creds|json_encode ~ ") %}" }}
+
+            {%- endif %}
+
+
+            {%- if params.condition is defined %}
+
+                {{ "{% if " ~ params.condition ~ " %}" }}
+
+            {%- endif %}
+
+            {%- set btn_class = 'btn-primary' %}
+            {%- if id == 'delete' %}
+                {%- set btn_class = 'btn-danger' %}
+
+                {{ "{% if " ~ entity_underscored ~ " is defined and not " ~ entity_underscored ~ ".isNew %}" }}
+
+                <button style="position: absolute !important; left: -10000em !important;" type="submit" value="save"
+                        class="hiddenSubmit"></button>
+
+            {%- endif %}
+
+            {% if id in ['save', 'save_and_add', 'save_and_list'] %}
+                {%- set btn_class = 'btn-success' %}
+            {%- endif %}
+
+            <div>
+                <button class="btn btn-with-icon {{ btn_class }}{% if id == 'delete' or params.confirm is defined %} confirm{% endif %}"
+                        type="{% if id in ['save', 'save_and_add', 'save_and_list', 'preview'] %}submit{% else %}button{% endif %}"{% if params.new_window is defined and params.new_window %} formtarget="_blank" data-new-window="1"{%- endif %}
+                        name="{{ id }}"{% if id == 'delete' or params.confirm is defined %} data-confirm="{{ "{% trans %}" }}{{ params.confirm|default('Jste si jist?') }}{{ "{% endtrans %}" }}"{% endif %}{% if id not in ['back', 'save', 'save_and_add', 'save_and_list'] %} data-url="{{ "{{ path('" ~ route_name_prefix ~ "_" ~ id ~ "', { id: " ~ entity_underscored ~ ".getId, culture: app.session.get('culture') }|merge(query_string)) }}" }}" {% elseif id == 'back' %} onclick="window.location = '{{ "{{ back_path }}" }}'; return false;"{% endif %}{% if id == 'delete' %} data-method="delete"{% elseif id not in ['back', 'save', 'save_and_add', 'save_and_list'] %} data-method="post"{% endif %}>
+                    <span class="btn-with-icon-icon"><svg class="icon icon-action-{{ icon }}"><use xlink:href="#icon-action-{{ icon }}"></use></svg></span>
+                    <strong class="btn-with-icon-text">{{ name }}</strong>
+                </button>
+            </div>
+
+            {%- if id == 'delete' %}
+
+                {{ "{% endif %}" }}
+
+            {%- endif %}
+
+            {%- if params.condition is defined %}
+
+                {{ "{% endif %}" }}
+
+            {%- endif %}
+
+            {%- if id != 'back' %}
+
+                {{ "{% endif %}" }}
+
+            {%- endif %}
+
+            {%- if id in ['save', 'delete'] and controller_config.archive is defined %}
+
+                {{ "{% endif %}" }}
+
+            {%- endif %}
+        {%- endfor %}
+
+    </div>
+
+{%- endif %}

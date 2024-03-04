@@ -1,0 +1,23 @@
+<?php
+namespace App\Controller\FontaiGenerator;
+
+{% block use_statements %}
+use App\Controller\FontaiGenerator\Base;
+use {{ entity_namespace }};
+use Symfony\Component\HttpFoundation\Request;
+{% endblock use_statements %}
+
+
+/**
+{% block phpdoc_class_header %}
+ * {{ entity_class }} controller.
+{% endblock phpdoc_class_header %}
+ *
+{% block phpdoc_class_annotations %}
+{% endblock phpdoc_class_annotations %}
+ */
+{% block class_definition %}
+class {{ entity_class }}Controller extends Base\{{ entity_class }}Controller
+{% endblock class_definition %}
+{
+}

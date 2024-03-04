@@ -1,0 +1,100 @@
+.fontai-alert {
+    display: flex;
+    min-width: 100%;
+    max-width: 480px;
+
+    &-icon {
+        width: 120px;
+        background: $fontai-light-gray4;
+        text-align: center;
+        padding: 30px 0 0 0;
+        margin: 0;
+
+        svg.icon {
+            width: 56px;
+            height: 56px;
+            fill: $fontai-black;
+
+            &.icon-alert-warning {
+                fill: $fontai-red;
+            }
+
+            &.icon-tick {
+                fill: $fontai-green;
+            }
+        }
+    }
+
+    &-message {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        padding: 30px;
+        margin: 0;
+        color: $fontai-black;
+        text-align: left;
+        min-height: 320px;
+
+        &-title {
+            margin: 0 0 30px 0;
+            flex-grow: 0;
+
+            h1, h2, h3, h4 {
+                font-style: normal;
+                font-weight: normal;
+                font-size: 24px;
+                line-height: 28px;
+                margin: 0;
+                padding: 0;
+                color: $fontai-black;
+            }
+        }
+
+        &-content {
+            font-style: normal;
+            font-weight: normal;
+            font-size: 14px;
+            line-height: 16px;
+            flex-grow: 1;
+
+            p, table {
+                color: $fontai-black;
+                font-style: normal;
+                font-weight: normal;
+                font-size: 14px;
+                line-height: 16px;
+            }
+        }
+
+        &-buttons {
+            flex-grow: 0;
+            display: flex;
+            margin: 0 -0.5rem;
+
+            button {
+                margin: 1rem 0.5rem 0 0.5rem;
+            }
+        }
+    }
+}
+
+.swal-icon {
+    display: none;
+}
+.swal-title {
+    display: none;
+}
+.swal-content {
+    padding: 0;
+    margin: 0;
+}
+.swal-content:last-child {
+    margin-bottom: 0;
+}
+.sweet-overlay {
+    background-color: black;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
+    background-color: rgba(0, 0, 0, 0.8);
+}
+

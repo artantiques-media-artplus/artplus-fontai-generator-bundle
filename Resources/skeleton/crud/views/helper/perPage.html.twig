@@ -1,0 +1,22 @@
+<div class="ml-auto dataTables_length">
+  <label>
+    <span class="d-none d-sm-inline">{{ "{% trans %}" }}Zobrazit na stránce{{ "{% endtrans %}" }}</span>
+    <span class="d-inline d-sm-none">{{ "{% trans %}" }}Na stránce{{ "{% endtrans %}" }}</span>
+    <select name="per_page" id="{{ entity_underscored }}_per_page" data-href="{{ "{{ path('" ~ route_name_prefix ~ "_index', { page: 1, culture: app.session.get('culture') }) }}" }}">
+
+{{ "{%- for curPerPage in " ~ config.list.per_page.choices|json_encode ~ " %}" }}
+
+      <option value="{{ "{{ curPerPage }}" }}"{{ "{% if app.user.getPerPage|default(" ~ config.list.per_page.default ~ ") == curPerPage %}" }} selected{{ "{% endif %}" }}>{{ "{{ curPerPage }}" }}</option>
+
+{{ "{%- endfor %}" }}
+
+{%- if controller_config.list.show_all|default(false) %}
+
+      <option value="all"{{ "{% if 'FontaiGenerator\\" ~ entity_class ~ "' in app.session.get('show_all', []) %}" }} selected{{ "{% endif %}" }}>{{ "{% trans %}" }}Vše{{ "{% endtrans %}" }}</option>
+
+{%- endif %}
+
+    </select>
+    <svg class="icon icon-caret-down"><use xlink:href="#icon-caret-down"></use></svg>
+  </label>
+</div>

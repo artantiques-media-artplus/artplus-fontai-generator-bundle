@@ -1,0 +1,14 @@
+<script>
+$(function()
+{
+
+{%- for label, messages in app.flashes(['notice', 'success', 'error']) %}
+  {%- for message in messages %}
+
+  fontaiAlert('{{ message }}', '', '{{ label }}');
+
+  {%- endfor %}
+{%- endfor %}
+
+});
+</script>

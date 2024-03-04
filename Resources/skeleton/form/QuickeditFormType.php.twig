@@ -1,0 +1,15 @@
+<?php
+namespace App\Form\FontaiGenerator\Quickedit;
+
+{% block use_statements %}
+use App\Form\FontaiGenerator\Quickedit\Base;
+
+{% endblock use_statements %}
+
+{% block class_definition %}
+class {{ form_class }} extends Base\{{ form_class }}
+{% endblock class_definition %}
+{
+{% block class_body %}
+{% endblock class_body %}
+}

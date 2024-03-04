@@ -1,0 +1,170 @@
+{%- if column[:1] == '_' %}
+   
+  {{ "{% include 'fontai_generator/" ~ entity_underscored ~ "/include/" ~ columnId ~ ".html.twig' with { type: 'filter' } %}" }}
+
+{%- elseif columnCfg.target_class is defined or (columnMap and columnMap.isForeignKey) %}
+
+  <select class="form-control chosen"
+    name="filters[{{ columnId }}][]"
+    id="filters_{{ columnId }}"
+    multiple
+    data-placeholder="{{ "{% trans %}" }}Vyberte{{ "{% endtrans %}" }}"
+    data-no_results_text="{{ "{% trans %}" }}Nenalezeno{{ "{% endtrans %}" }}"
+
+  {%- if columnCfg.autocomplete|default(false) %}
+
+    data-autocomplete-url="{{ "{{ path('" ~ route_name_prefix ~ "_autocomplete', { type: 'filter', output: 'id' }) }}" }}"
+    data-autocomplete-name="{{ columnId }}"
+    data-autocomplete-length="{{ columnCfg.autocomplete.length|default(3) }}"
+
+  {%- endif %}>
+
+    {{ "{%- for object in related_query['" ~ columnId ~ "']" ~ (columnCfg.autocomplete|default(false) ? ".filterById(filters." ~ columnId ~ "|default(''))" : "") ~ "." ~ columnCfg.query_method|default('find') ~ " %}" }}
+
+    <option value="{{ "{{ object.getId }}" }}"{{ "{% if object.getId|trim in filters." ~ columnId ~ "|default('') %}" }} selected{{ "{% endif %}" }}>
+      {{ "{{ object." ~ columnCfg.text_method|default('__toString') ~ " }}" }}
+    </option>
+
+    {{ "{%- endfor %}" }}
+
+  </select>
+
+{%- elseif columnCfg.choices is defined %}
+
+  <select class="form-control chosen"
+    name="filters[{{ columnId }}][]"
+    id="filters_{{ columnId }}"
+    data-placeholder="{{ "{% trans %}" }}Vyberte{{ "{% endtrans %}" }}"
+    data-no_results_text="{{ "{% trans %}" }}Nenalezeno{{ "{% endtrans %}" }}"
+    multiple>
+
+    {{ "{%- for v, t in " ~ columnCfg.choices|json_encode(constant('JSON_PRETTY_PRINT') + constant('JSON_UNESCAPED_UNICODE'))|raw ~ " %}" }}
+
+    <option value="{{ "{{ v }}" }}"{{ "{% if v|trim in filters." ~ columnId ~ "|default([]) %}" }} selected{{ "{% endif %}" }}>
+      {{ "{{ t|trans }}" }}
+    </option>
+
+    {{ "{%- endfor %}" }}
+
+  </select>
+
+{%- elseif columnMap and columnMap.getType == 'BOOLEAN' %}
+  {%- set options = { '': columnCfg.include_custom|default('ano nebo ne'), '0': 'ne', '1': 'ano' } %}
+
+  <select class="form-control chosen"
+    name="filters[{{ columnId }}]"
+    id="filters_{{ columnId }}"
+    data-placeholder="{{ "{% trans %}" }}Vyberte{{ "{% endtrans %}" }}"
+    data-no_results_text="{{ "{% trans %}" }}Nenalezeno{{ "{% endtrans %}" }}">
+
+    {{ "{%- for v, t in " ~ options|json_encode(constant('JSON_PRETTY_PRINT') + constant('JSON_UNESCAPED_UNICODE'))|raw ~ " %}" }}
+
+    <option value="{{ "{{ v }}" }}"{{ "{% if filters." ~ columnId ~ "|default('') is same as(v|trim) %}" }} selected{{ "{% endif %}" }}>
+      {{ "{{ t|trans }}" }}
+    </option>
+
+    {{ "{%- endfor %}" }}
+
+  </select>
+
+{%- elseif columnMap and columnMap.getType in ['INTEGER', 'TINYINT', 'SMALLINT', 'BIGINT', 'FLOAT', 'DOUBLE', 'DECIMAL', 'NUMERIC', 'REAL'] %}
+  {%- if columnCfg.filter_range|default(false) %}
+
+  <div class="form-row">
+    <div class="col-sm-6">
+      <input class="form-control"
+      type="number"
+      {% if columnMap.getType in ['FLOAT', 'DOUBLE', 'DECIMAL', 'NUMERIC', 'REAL'] -%}
+      step="any"
+      {%- endif %}
+      name="filters[{{ columnId }}][from]"
+      id="filters_{{ columnId }}_from"
+      value="{{ "{{ filters." ~ columnId ~ ".from|default('') }}" }}"
+      placeholder="{{ "{% trans %}" }}Od{{ "{% endtrans %}" }}"
+      size="{{ columnCfg.size|default(columnMap ? min(columnMap.getSize, 7) : 7) }}">
+    </div>
+    <div class="col-sm-6">
+      <input class="form-control"
+      type="number"
+      {% if columnMap.getType in ['FLOAT', 'DOUBLE', 'DECIMAL', 'NUMERIC', 'REAL'] -%}
+      step="any"
+      {%- endif %}
+      name="filters[{{ columnId }}][to]"
+      id="filters_{{ columnId }}_to"
+      value="{{ "{{ filters." ~ columnId ~ ".to|default('') }}" }}"
+      placeholder="{{ "{% trans %}" }}Do{{ "{% endtrans %}" }}"
+      size="{{ columnCfg.size|default(columnMap ? min(columnMap.getSize, 7) : 7) }}">
+    </div>
+  </div>
+
+  {%- else %}
+
+  <input class="form-control mb-2 mr-sm-2"
+    type="number"
+    {% if columnMap.getType in ['FLOAT', 'DOUBLE', 'DECIMAL', 'NUMERIC', 'REAL'] -%}
+    step="any"
+    {%- endif %}
+    name="filters[{{ columnId }}]"
+    id="filters_{{ columnId }}"
+    value="{{ "{{ filters." ~ columnId ~ "|default('') }}" }}"
+    size="{{ columnCfg.size|default(columnMap ? min(columnMap.getSize, 7) : 7) }}">
+
+  {%- endif %}
+{%- elseif columnMap and columnMap.isTemporal %}
+  {%- set withTime = columnMap.getType != 'DATE' %}
+
+  <div class="form-row">
+    <div class="col-sm-6">
+      <input class="form-control"
+        type="date{% if withTime %}time-local{% endif %}"
+        name="filters[{{ columnId }}][from]" id="filters_{{ columnId }}_from"
+        value="{{ "{% if filters." ~ columnId ~ ".from|default('') %}{{ filters." ~ columnId ~ ".from|localizeddate('medium', 'short') }}{% endif %}" }}"
+        placeholder="{{ "{% trans %}" }}Od{{ "{% endtrans %}" }}"
+        autocomplete="off"
+        data-value="{{ "{% if filters." ~ columnId ~ ".from|default('') %}{{ filters." ~ columnId ~ ".from|date('Y-m-d" ~ (withTime ? "\\\\TH:i:s" : "") ~ "') }}{% endif %}" }}">
+    </div>
+    <div class="col-sm-6">
+      <input class="form-control"
+        type="date{% if withTime %}time-local{% endif %}"
+        name="filters[{{ columnId }}][to]" id="filters_{{ columnId }}_to"
+        value="{{ "{% if filters." ~ columnId ~ ".to|default('') %}{{ filters." ~ columnId ~ ".to|localizeddate('medium', 'short') }}{% endif %}" }}"
+        placeholder="{{ "{% trans %}" }}Do{{ "{% endtrans %}" }}"
+        autocomplete="off"
+        data-value="{{ "{% if filters." ~ columnId ~ ".to|default('') %}{{ filters." ~ columnId ~ ".to|date('Y-m-d" ~ (withTime ? "\\\\TH:i:s" : "") ~ "') }}{% endif %}" }}">
+    </div>
+  </div>
+
+{%- else %}
+  {%- if columnCfg.autocomplete|default(false) %}
+
+  <select class="form-control chosen"
+    name="filters[{{ columnId }}][]"
+    id="filters_{{ columnId }}"
+    multiple
+    data-placeholder="{{ "{% trans %}" }}Vyberte{{ "{% endtrans %}" }}"
+    data-no_results_text="{{ "{% trans %}" }}Nenalezeno{{ "{% endtrans %}" }}"
+    data-autocomplete-url="{{ "{{ path('" ~ route_name_prefix ~ "_autocomplete', { type: 'filter' }) }}" }}"
+    data-autocomplete-name="{{ columnId }}"
+    data-autocomplete-length="{{ columnCfg.autocomplete.length|default(3) }}">
+
+    {{ "{%- for value in filters." ~ columnId ~ "|default([]) %}" }}
+
+    <option value="{{ "{{ value }}" }}" selected>
+      {{ "{{ value }}" }}
+    </option>
+
+    {{ "{%- endfor %}" }}
+
+  </select>
+
+  {%- else %}
+
+  <input class="form-control mb-2 mr-sm-2"
+    type="text"
+    name="filters[{{ columnId }}]"
+    id="filters_{{ columnId }}"
+    value="{{ "{{ filters." ~ columnId ~ "|default('') }}" }}"
+    size="{{ columnCfg.size|default(columnMap ? min(columnMap.getSize, 40) : 40) }}">
+
+  {%- endif %}
+{%- endif %}

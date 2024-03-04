@@ -1,0 +1,40 @@
+.tabs {
+  list-style-type: none;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 0 0 24px;
+  margin: -25px -25px 25px -25px;
+  font-size: 14px;
+  background: #FFFFFF;
+
+  a {
+    display: block;
+    color: $fontai-black;
+    text-transform: uppercase;
+    padding: 5px 20px 8px 20px;
+    border-bottom: 2px solid transparent;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+  }
+
+  li {
+    &:hover, &.active {
+      a {
+        border-bottom-color: $fontai-black;
+      }
+    }
+  }
+
+  @media (max-width: 767px) {
+    padding-top: 10px;
+    margin-bottom: 20px;
+
+    a {
+      padding: 10px 15px 8px 15px;
+    }
+  }
+}

@@ -1,0 +1,201 @@
+/*
+Template Name: Admin Pro Admin
+Author: Wrappixel
+Email: niravjoshi87@gmail.com
+File: scss
+*/
+
+@import '../variable';
+$themecolor: #14D7FF;
+$themecolor-dark: #006B7F;
+$topbar: #fff;
+$sidebar:#000000;
+$sidebar-text: #ffffff;
+$sidebar-icons: #424a56;
+$sidebar-dark: #222222;
+$sidebar-alt:#222222;
+$themecolor-alt: #26c6da;
+$topbar-alt: #26c6da;
+$bodytext: #1c1c1c;
+
+/*******************
+/*Top bar
+*******************/
+
+.topbar {
+    background: $topbar;
+    .top-navbar .navbar-header .navbar-brand .dark-logo {
+        display: none;
+    }
+    .top-navbar .navbar-header .navbar-brand .light-logo {
+        display: inline-block;
+        color: #ffffff;
+    }
+    .top-navbar{
+        .navbar-nav>.nav-item>span {
+            color: #000000;
+        }
+    }
+    .navbar-light .navbar-nav .nav-item > {
+        a.nav-link {
+            color: #000000;
+            &:hover,
+            &:focus {
+                color: $themecolor !important;
+            }
+        }
+    }
+    .navbar-header {
+        background: #000000;
+    }
+}
+
+.logo-center .topbar {
+    .navbar-header {
+        text-align: center;
+        padding-left: 0px;
+        box-shadow: none;
+    }
+    .top-navbar .navbar-header .navbar-brand .dark-logo {
+        display: none;
+    }
+    .top-navbar .navbar-header .navbar-brand .light-logo {
+        display: inline-block;
+        color: rgba(255, 255, 255, 0.8);
+    }
+}
+
+
+/*******************
+/*General Elements
+*******************/
+
+a {
+    color: $themecolor;
+}
+
+a.link {
+    &:hover,
+    &:focus {
+        color: $themecolor!important;
+    }
+}
+
+.bg-theme {
+    background-color: $themecolor !important;
+}
+
+.pagination > .active > a,
+.pagination > .active > span,
+.pagination > .active > a:hover,
+.pagination > .active > span:hover,
+.pagination > .active > a:focus,
+.pagination > .active > span:focus {
+    background-color: $themecolor;
+    border-color: $themecolor;
+}
+
+.right-sidebar {
+    .rpanel-title {
+        background: $themecolor;
+    }
+}
+
+.stylish-table {
+    tbody tr {
+        &:hover,
+        &.active {
+            border-left: 4px solid $themecolor;
+        }
+    }
+}
+
+.text-themecolor {
+    color: $themecolor!important;
+}
+
+.profile-tab,
+.customtab {
+    li {
+        a.nav-link {
+            &.active {
+                border-bottom: 2px solid $themecolor;
+                color: $themecolor;
+            }
+            &:hover {
+                color: $themecolor;
+            }
+        }
+    }
+}
+
+
+/*******************
+/*sidebar navigation
+*******************/
+
+.card-no-border .left-sidebar,
+.card-no-border .sidebar-nav {
+    background: $sidebar;
+}
+
+.mini-sidebar .sidebar-nav {
+    background: transparent;
+}
+
+@media (min-width: 768px) {
+    .mini-sidebar .sidebar-nav #sidebarnav>li>ul {
+        background: $sidebar-dark;
+    }
+}
+
+.sidebar-nav {
+    background: $sidebar;
+}
+
+.user-profile .profile-text a {
+    color: $sidebar-text!important;
+}
+
+.card-no-border .sidebar-footer {
+    background: $sidebar-dark;
+}
+
+.label-themecolor {
+    background: $themecolor;
+}
+
+.sidebar-nav>ul>li.active>a {
+    color: $themecolor;
+    i {
+        color: $themecolor;
+
+        &.icon-category {
+            background-color: $themecolor;
+        }
+    }
+}
+
+.sidebar-nav ul li a {
+    &.active,
+    &:hover {
+        color: $themecolor;
+        i {
+            color: $themecolor;
+
+            &.icon-category {
+                background-color: $themecolor;
+            }
+        }
+    }
+}
+
+.sidebar-nav ul li.nav-small-cap {
+    color: $sidebar-text;
+}
+@media (min-width: 768px){
+    .mini-sidebar .sidebar-nav #sidebarnav > li:hover > a {
+        
+        background: $sidebar-alt;
+    }
+}
