@@ -17,7 +17,7 @@
         "fontai/text-bundle": "*",
         "friendsofsymfony/ckeditor-bundle": "^2.0",
         "liip/imagine-bundle": "^2.6",
-        "propel/propel-bundle": "~4.0@dev",
+        "propel/propel-bundle": "dev-main",
         "symfony/asset": ">=4.4.0",
         "symfony/expression-language": ">=4.4.0",
         "symfony/security-bundle": ">=4.4.0",
